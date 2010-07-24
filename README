@@ -1,0 +1,48 @@
+=head1 Net::IRC
+
+Elegant. Simple. Probably doesn't compile.
+
+=head1 Synopsis
+
+ use Net::IRC::Bot;
+
+ class AnnoyingBot is Net::IRC::Bot does ExtraAnnoying {
+     #Will be called when the bot gets a join event
+     multi method joined ($who, $channel) {
+          $.reply("Hi there, $who!"); 
+     }
+ }
+
+ role ExtraAnnoying {
+     #Called on a regular privmsg event
+     multi method said ($msg, $who, $channel) {
+         $.reply($msg); #Parrot back what was said;
+     }
+ }
+ 
+ AnnoyingBot.create(
+ 	nick => 'KickMe',
+ 	server => 'irc.freenode.net',
+ 	channels => <#bottest>,
+ ).run;
+
+=head1 Description
+
+Its an IRC Bot framework! Theres not much else to it.
+It's currently in active development (read:broken + everything is changing constantly),
+so unless you just want ot look or have an experimental tinker, you might want to wait 
+for just a little bit.
+
+=head1 Methods
+
+TODO
+
+=head2 External methods
+
+=head2 Callbacks
+
+said, emoted, joined, noticed, nickchange, connected
+
+=head2 Helper methods
+
+say, reply, send_ctcp

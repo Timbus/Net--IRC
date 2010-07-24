@@ -92,6 +92,10 @@ class Net::IRC::Bot {
 		}
 	}
 	
+	method reply($text) {
+		$.msg($text, $.channel);
+	}
+	
 	method send_ctcp($text, $to) {
 		$conn.sendln("NOTICE $to :\c01$text\c01");
 	}
