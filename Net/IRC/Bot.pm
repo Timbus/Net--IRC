@@ -41,16 +41,13 @@ class Net::IRC::Bot {
 		$nickattempts = 0;
 	}
 	
-	method run(){
+	method create(){
 		$manager = Net::IRC::Dispatcher.new(bot => self, connection => Net::IRC::Connection.new);
 		$.connect;
 		$manager.run;
 	}
 	
 	method connect(){
-		#In case we're reconnecting..
-		$.disconnect;
-		
 		#Establish connection to server
 		say "Connecting to $server on port $port";
 		$conn.open($server, $port);
@@ -67,12 +64,26 @@ class Net::IRC::Bot {
 		$connected = True;
 	}
 	
-	method disconnect($quitmsg = "Leaving"){
-		$.resetstate;
-		return unless $connected;
+	method reconnect(){
+		return False unless $autoreconnect;
 		
-		$conn.sendln("QUIT :$quitmsg");
-		$conn.close;
+		my $failcount = 0;
+		while ($failcount < 5){
+			$.disconnect;
+			$.connect;
+			
+			return True;
+		
+			CATCH { ++$failcount }
+		}
+	}
+	
+	method disconnect($quitmsg = "Leaving"){
+		if $connected {		
+			$conn.sendln("QUIT :$quitmsg");
+			$conn.close;
+		}
+		$.resetstate;
 	}
 	
 	##Utility methods

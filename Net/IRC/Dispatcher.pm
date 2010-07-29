@@ -12,23 +12,35 @@ grammar Event {
 }#**
 
 class Net::IRC::Dispatcher {
-	has Net::IRC::Bot $bot;
+	has $bot;
 	has $connection;
 	#TODO: has @connections;
 	
 	method run() {
+		$bot.connect();
 		loop {
 		
 			#XXX: Support for timed events?
 			
-			my $event = $connection.nextevent;
-			#TODO: fail('Server closed connection')
+			my $line = $connection.get 
+				or fail('Server closed connection')
 			
+			my $event = Event.parse($line)
+				or warn "Could not parse the following IRC event: $line";	
 			#---FOR DEBUGGING----
 			say ~$event;
 			#--------------------
 			
-			$.dispatch($event);	
+			$.dispatch($event);
+			
+			CATCH {
+				#On the event of a dicconnect, we retry (if the bot is told to do so..)
+				if $! eq 'Server closed connection' {
+					$bot.reconnect;
+					next;
+				}
+				last;
+			}
 		}
 	}
 	

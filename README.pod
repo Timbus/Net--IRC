@@ -6,24 +6,27 @@ Elegant. Simple. Probably doesn't compile.
 
  use Net::IRC::Bot;
 
- class AnnoyingBot is Net::IRC::Bot does ExtraAnnoying {
+ class AnnoyUsers does ExtraAnnoying {
      #Will be called when the bot gets a join event
-     multi method joined ($who, $channel) {
-          $.reply("Hi there, $who!"); 
+     multi method joined ($who, $channel, $e) {
+          $e.reply("Hi there, $who!"); 
      }
  }
 
  role ExtraAnnoying {
      #Called on a regular privmsg event
-     multi method said ($msg, $who, $channel) {
-         $.reply($msg); #Parrot back what was said;
+     multi method said ($msg, $who, $channel, $e) {
+         $e.reply($msg); #Parrot back what was said;
      }
  }
  
- AnnoyingBot.create(
+ 
+ Net::IRC::Bot.new(
  	nick => 'KickMe',
  	server => 'irc.freenode.net',
  	channels => <#bottest>,
+ 	
+ 	modules = [AnnoyUsers.new(), Autoident.new(password => 'nspassw0rd')],
  ).run;
 
 =head1 Description

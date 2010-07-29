@@ -12,6 +12,7 @@ class Net::IRC::Connection is IO::Socket::INET {
 			
 			if $tail {
 				$buf := $tail;
+				#Fix for Buf returning strings with broken encoding.
 				return $line.encode('UTF-8').decode('UTF-8');
 			}
 		}
