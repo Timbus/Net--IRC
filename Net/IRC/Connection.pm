@@ -9,7 +9,7 @@ class Net::IRC::Connection is IO::Socket::INET {
 	method get {
 		loop {
 			my ($line, $tail) = $buf.split("\c13\c10", 2);
-			
+
 			if $tail {
 				$buf := $tail;
 				#Fix for Buf returning strings with broken encoding.
@@ -17,13 +17,13 @@ class Net::IRC::Connection is IO::Socket::INET {
 			}
 		}
 	}
-	
+
 	method sendln(Str $string) {
 		self.send($string~"\c13\c10");
 	}
 
-    method recvp () {
-        fail("Not connected!") unless $!PIO;
-        return $!PIO.recv();
-    }
+	method recvp () {
+		die("Not connected!") unless $!PIO;
+		return $!PIO.recv();
+	}
 }
