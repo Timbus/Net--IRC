@@ -6,7 +6,7 @@ class Net::IRC::Event {
 	has $.what;
 	has $.where;
 	##Utility methods
-	method msg($text, $to) {
+	method msg($text, $to = $.where) {
 		##IRC RFC specifies 510 bytes as the maximum allowed to send per line. 
 		#I'm going with 480, as 510 seems to get cut off on some servers.
 		my $prepend = "PRIVMSG $to :";
@@ -16,15 +16,14 @@ class Net::IRC::Event {
 				#Break up the line using a nearby space if possible.
 				my $index = $line.rindex(" ", $maxlen) || $maxlen;
 				$conn.sendln($prepend~$line.substr(0, $index));
-				$line .= substr($index+1); 
+				$line := $line.substr($index+1); 
 			}
 			$conn.sendln($prepend~$line); 
 		}
 	}
 	
-	method reply($text) {
-		$.from
-		$.msg($text, $.from);
+	method act($text, $to = $.where) {
+		$conn.sendln("PRIVMSG $to :\c01ACTION $text\c01")
 	}
 	
 	method send_ctcp($text, $to) {

@@ -40,21 +40,29 @@ for just a little bit.
 
 =head1 Methods and Attributes
 
-Net::IRC::Bot only really has one needed method: run()
-Everything else is setup using parameters to new()
+Net::IRC::Bot only really has one needed method: run(). Everything else is setup using 
+parameters to new()
 
 List of attributes + their defaults:
+
 $nick = "Rakudobot";
+
 @altnicks = $nick «~« ("_","__",^10);
+
 $username = "Clunky";
+
 $realname = '$@%# yeah, perl 6!';
 
 $server = "irc.perl.org";
+
 $port = 6667;
+
 $password;
+
 @autojoin;
 
 $autoreconnect = False;
+
 $throttle = False;
 
 
@@ -62,9 +70,10 @@ $throttle = False;
 
 Callbacks are event handlers created by you, the bot maker. They are dispatched to by name
 when an appropriate IRC event is fired.
+
 There are currently six 'main' types of events: C<said>, C<acted>, C<joined>, C<noticed>, C<nickchanged>
 and C<connected>. They will be called with a Net::IRC::Event object containing every detail possible 
-about the event.
+about the event. [Details to come soon]
 
 For any event that doesn't fit into the above category, you will need to set up a raw event handler.
 Raw handlers begin with 'irc_' and won't have their Event objects properly filled [TODO: List what will be filled]
