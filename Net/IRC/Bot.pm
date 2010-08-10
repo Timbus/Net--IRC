@@ -1,4 +1,5 @@
 use v6;
+use Net::IRC::Connection;
 
 class User is Cool {
 	has $.fullnick;
@@ -32,7 +33,6 @@ our multi infix:<=> (User $u is rw, Str $s) is export {
 	$u .= new($s);
 }
 
-use Net::IRC::Connection;
 class Net::IRC::Bot {
 	has Net::IRC::Connection $conn;
 
@@ -72,7 +72,8 @@ class Net::IRC::Bot {
 	method connect(){
 		#Establish connection to server
 		say "Connecting to $server on port $port";
-		$conn.open($server, $port);
+		my $r = $conn.open($server, $port) 
+			or die $r;
 
 		#Send PASS if needed
 		$conn.sendln("PASS $password") if $password;
@@ -98,6 +99,7 @@ class Net::IRC::Bot {
 		
 			CATCH { ++$failcount }
 		}
+		return False;
 	}
 
 	method disconnect($quitmsg = "Leaving"){
@@ -117,12 +119,10 @@ class Net::IRC::Bot {
 	} #?
 
 	method run() {
-		$.connect() or $.reconnect();
 		loop {
 			#XXX: Support for timed events?
 			my $line = $connection.get
-				or $.reconnect and next
-				or last;
+				or die "Connection error.";
 			
 			my $event = RawEvent.parse($line)
 				or warn "Could not parse the following IRC event: $line" and next;
@@ -131,6 +131,15 @@ class Net::IRC::Bot {
 			#--------------------
 			
 			$.dispatch($event);
+			
+			CATCH {
+				my $failcount = 0;
+				while ($failcount < 5){
+					$.disconnect;
+					$.connect;
+					CATCH { ++$failcount }
+				}
+			}
 		}
 	}
 	

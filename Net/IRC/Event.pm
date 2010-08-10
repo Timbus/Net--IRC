@@ -2,7 +2,9 @@ use v6;
 
 class Net::IRC::Event {
 	has $.eventtxt;
-	
+	has $.who;
+	has $.what;
+	has $.where;
 	##Utility methods
 	method msg($text, $to) {
 		##IRC RFC specifies 510 bytes as the maximum allowed to send per line. 
@@ -21,7 +23,8 @@ class Net::IRC::Event {
 	}
 	
 	method reply($text) {
-		$.msg($text, $.channel);
+		$.from
+		$.msg($text, $.from);
 	}
 	
 	method send_ctcp($text, $to) {

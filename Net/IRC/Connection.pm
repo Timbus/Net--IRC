@@ -9,12 +9,13 @@ class Net::IRC::Connection is IO::Socket::INET {
 	method get {
 		loop {
 			my ($line, $tail) = $buf.split("\c13\c10", 2);
-
 			if $tail {
 				$buf := $tail;
 				#Fix for Buf returning strings with broken encoding.
 				return $line.encode('UTF-8').decode('UTF-8');
 			}
+
+			$buf ~= $.recvp;
 		}
 	}
 

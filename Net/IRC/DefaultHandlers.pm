@@ -91,7 +91,7 @@ class Net::IRC::DefaultHandlers {
 		}
 	}
 	
-	multi method ctcp_version($event) {
+	proto method ctcp_version($event) {
 		$.send_ctcp("VERSION Perl6bot 0.001a Probably *nix", $from);
 	}
 }
