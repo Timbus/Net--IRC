@@ -1,10 +1,18 @@
 use v6;
 
 class Net::IRC::Event {
-	has $.eventtxt;
+	#EVERY event has to have these:
+	has $.rawevent;
+	has $.type;
+	has $.conn;
+	has $.state;
+	
+	#Most events can have these. 'where' is a tricky one.
 	has $.who;
 	has $.what;
 	has $.where;
+
+	
 	##Utility methods
 	method msg($text, $to = $.where) {
 		##IRC RFC specifies 510 bytes as the maximum allowed to send per line. 
@@ -26,11 +34,7 @@ class Net::IRC::Event {
 		$conn.sendln("PRIVMSG $to :\c01ACTION $text\c01")
 	}
 	
-	method send_ctcp($text, $to) {
+	method send_ctcp($text, $to = $.where) {
 		$conn.sendln("NOTICE $to :\c01$text\c01");
-	}
-	
-	method strip_nick($fullnick){
-		~$fullnick ~~ /^(<-[\!]>+)'!'/ ?? ~$0 !! ~$fullnick; #?
 	}
 }

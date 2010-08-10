@@ -33,43 +33,48 @@ our multi infix:<=> (User $u is rw, Str $s) is export {
 	$u .= new($s);
 }
 
+sub strip_nick ($fullnick) {
+	~$fullnick ~~ /^(<-[\!]>+)'!'/ ?? ~$0 !! ~$fullnick;
+}
+
 class Net::IRC::Bot {
-	has Net::IRC::Connection $conn;
+	has Net::IRC::Connection $conn .= new();
 
 	#Set some sensible defaults for the bot.
-	has $nick = "Rakudobot";
+	#These are not stored as state, they are just used for the bot's "start state"
+	#Changing things like $nick and @channels are tracked in %state
+	has $nick     = "Rakudobot";
 	has @altnicks = $nick «~« ("_","__",^10);
 	has $username = "Clunky";
 	has $realname = '$@%# yeah, perl 6!';
 
-	has $server = "irc.perl.org";
-	has $port = 6667;
+	has $server   = "irc.perl.org";
+	has $port     = 6667;
 	has $password;
 	has @autojoin;
 
 	#Options
 	has $autoreconnect = False;
-	has $throttle = False;
+	has $throttle      = False;
 
 	#State variables.
-	has %channels;
-
-	has $loggedin = False;
-	has $connected = False;
+	has %state = (
+		nick         => $.nick;
+		loggedin     => False;
+		connected    => False;
+	);
 	has $nickattempts = 0;
 
 	method true {
-		$connected;
+		%state<connected>;
 	}
 
-	method resetstate() {
-		%channels     = ();
-		$loggedin     = False;
-		$connected    = False;
+	method !resetstate() {
+		%state        = ();
 		$nickattempts = 0;
 	}
 
-	method connect(){
+	method !connect(){
 		#Establish connection to server
 		say "Connecting to $server on port $port";
 		my $r = $conn.open($server, $port) 
@@ -84,30 +89,15 @@ class Net::IRC::Bot {
 		$conn.sendln("NICK $nick");
 		$conn.sendln("USER $username abc.xyz.net $server :$realname");
 
-		$connected = True;
+		%state<connected> = True;
 	}
 
-	method reconnect(){
-		return False unless $autoreconnect;
-		
-		my $failcount = 0;
-		while ($failcount < 5){
-			$.disconnect;
-			$.connect;
-			
-			return True;
-		
-			CATCH { ++$failcount }
-		}
-		return False;
-	}
-
-	method disconnect($quitmsg = "Leaving"){
+	method !disconnect($quitmsg = "Leaving"){
 		if $connected {		
 			$conn.sendln("QUIT :$quitmsg");
 			$conn.close;
 		}
-		$.resetstate;
+		$!resetstate;
 	}
 
 	grammar RawEvent {
@@ -116,7 +106,7 @@ class Net::IRC::Bot {
 			| ^':'?$<command>=(ERROR) ':'?$<text>=(.+)$
 			| ^':'?$<from>=<-space>+ $<command>=<-space>+[ <!before ':'>$<param>=<-space>+]*?[ ':'$<text>=(.+)]?<.ws>?$
 		}
-	} #?
+	}
 
 	method run() {
 		loop {
@@ -130,20 +120,37 @@ class Net::IRC::Bot {
 			say ~$event;
 			#--------------------
 			
-			$.dispatch($event);
+			$!dispatch($event);
 			
 			CATCH {
 				my $failcount = 0;
 				while ($failcount < 5){
-					$.disconnect;
-					$.connect;
+					$!disconnect;
+					$!connect;
 					CATCH { ++$failcount }
 				}
 			}
 		}
 	}
 	
-	method dispatch(Match $event) {
+	multi method !dispatch($event where 'PING'|'PONG'|'ERROR'}) {
+		#Specifically filter these out, they're special.
+		@modules>>.*"irc_{ lc $event<command> }"($event);
+	}
+	
+	multi method !dispatch($rawevent) {
+		#Make an event object and fill it as much as we can.
+		#XXX: Should I just use a single cached Event to save memory?
+		
+		Net::IRC::Event.new(
+			rawevent => ~event,
+			type => ~$rawevent<command>,
+			conn => $conn,
+			state => %state,
+			who => User.new($rawevent<from>) || ~$rawevent<from>,
+		);
+				
+			
 		#Dispatch to any raw irc_event handlers first
 		@modules>>.*"irc_{ lc $event<command> }"($event);
 
@@ -157,7 +164,7 @@ class Net::IRC::Bot {
 				if $text ~~ /^\c01 (.*) \c01$/ {
 					$text = ~$0;
 					say "Received CTCP $text from $from" ~
-						( $channel eq $from ?? '.' !! " (to channel $channel)." ); #?
+						( $channel eq $from ?? '.' !! " (to channel $channel)." );
 
 					if $text ~~ /^ ACTION <.ws> (.*) $/ {
 						$.*emoted(~$0, ~$from, ~$channel);
@@ -179,26 +186,26 @@ class Net::IRC::Bot {
 			}
 
 			when "NOTICE" {
-				my $from = $.strip_nick(~$event<from>);
+				my $from = strip_nick(~$event<from>);
 				my $channel = ~$event<param>[0] ~~ /^\#.*/ || $from;
 				@modules>>.*noticed(~$event<text>, ~$from, ~$channel);
 			}
 			
 			when "KICK" {
-				my $from = $.strip_nick(~$event<from>);
+				my $from = strip_nick(~$event<from>);
 				my $channel = ~$event<param>[0];
 				my $kicked = ~$event<param>[1];
 				@modules>>.*kicked($kicked, ~$event<text>, $from, $channel);
 			}
 			
 			when "JOIN" {
-				my $from = $.strip_nick(~$event<from>);
+				my $from = strip_nick(~$event<from>);
 				my $channel = ~$event<text>;
 				@modules>>.*joined($from, $channel);
 			}
 			
 			when "NICK" {
-				my $from = $.strip_nick(~$event<from>);
+				my $from = strip_nick(~$event<from>);
 				my $to = ~$event<text> // ~$event<param>[0];
 				@modules>>.*nickchange($from, $to);
 			}
