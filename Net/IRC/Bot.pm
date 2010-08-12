@@ -1,42 +1,6 @@
 use v6;
 use Net::IRC::Connection;
 
-class User is Cool {
-	has $.fullnick;
-	has $.nick;
-	has $.host;
-	has $.ident;
-
-	multi method new ($s) {
-		~$s ~~ /^$<nick>=(.+?)\!$<ident>=(.+?)\@$<host>=(.+)$/
-			or fail('Type check failed for assignment');
-
-		return $.bless(
-			*,
-			fullnick => ~$s,
-			nick => ~$<nick>,
-			host => ~$<host>,
-			ident => ~$<ident>,
-		);
-	}
-
-	multi method Str is export {
-		return $.nick;
-	}
-
-	multi method match is export ($topic) {
-		return ($.nick ~~ $topic);
-	}
-}
-
-our multi infix:<=> (User $u is rw, Str $s) is export {
-	$u .= new($s);
-}
-
-sub strip_nick ($fullnick) {
-	~$fullnick ~~ /^(<-[\!]>+)'!'/ ?? ~$0 !! ~$fullnick;
-}
-
 class Net::IRC::Bot {
 	has Net::IRC::Connection $conn .= new();
 
@@ -55,7 +19,6 @@ class Net::IRC::Bot {
 
 	#Options
 	has $autoreconnect = False;
-	has $throttle      = False;
 
 	#State variables.
 	has %state = (
@@ -101,10 +64,24 @@ class Net::IRC::Bot {
 	}
 
 	grammar RawEvent {
-		rule TOP {
-			| ^':'?$<command>=(P[I|O]NG) ':'?$<text>=(.+)?$
-			| ^':'?$<command>=(ERROR) ':'?$<text>=(.+)$
-			| ^':'?$<from>=<-space>+ $<command>=<-space>+[ <!before ':'>$<param>=<-space>+]*?[ ':'$<text>=(.+)]?<.ws>?$
+		token TOP {
+			[':' [<user>||<server=host>] <.space> || <?>] <command> [ <.space>+ [':'$<params>=(.*)$ || $<params>=<-space>+] ]*
+		}
+	
+		token user {
+			$<nick>=<-[:!]>+ '!' $<ident>=<-[@]>+ '@' <host>
+		}
+	
+		token host {
+			[ <-space - [.!@#$%^&(){}\[\]|\-+_=~]>+ ] ** '.'
+		}#.
+	
+		token command {
+			<.alpha>+ | \d\d\d
+		}
+	
+		token params {
+			[':'.*$ | <-space>+ ]
 		}
 	}
 
@@ -147,9 +124,10 @@ class Net::IRC::Bot {
 			type => ~$rawevent<command>,
 			conn => $conn,
 			state => %state,
-			who => User.new($rawevent<from>) || ~$rawevent<from>,
+			
+			who => %($rawevent<from>) || ~$rawevent<from>,
+			#where => $rawevent<param>[0], #Is this true?
 		);
-				
 			
 		#Dispatch to any raw irc_event handlers first
 		@modules>>.*"irc_{ lc $event<command> }"($event);
@@ -213,10 +191,6 @@ class Net::IRC::Bot {
 			when "376"|"422" {
 				#End of motd / no motd. (Usually) The last thing a server sends the client on connect.
 				@modules>>.*connected;
-			}
-			
-			default {
-				@modules>>.*"{ lc $event<command> }"($event);
 			}
 		}
 	}
