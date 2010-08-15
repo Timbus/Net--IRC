@@ -2,12 +2,12 @@ use v6;
 
 class Net::IRC::Event {
 	#EVERY event has to have these:
-	has $.rawevent;
-	has $.type;
+	has $.raw;
+	has $.command;
 	has $.conn;
 	has $.state;
 	
-	#Most events can have these. 'where' is a tricky one.
+	#Most events can have these.
 	has $.who;
 	has $.what;
 	has $.where;
@@ -23,18 +23,18 @@ class Net::IRC::Event {
 			while $line.bytes > $maxlen {
 				#Break up the line using a nearby space if possible.
 				my $index = $line.rindex(" ", $maxlen) || $maxlen;
-				$conn.sendln($prepend~$line.substr(0, $index));
+				$.conn.sendln($prepend~$line.substr(0, $index));
 				$line := $line.substr($index+1); 
 			}
-			$conn.sendln($prepend~$line); 
+			$.conn.sendln($prepend~$line); 
 		}
 	}
 	
 	method act($text, $to = $.where) {
-		$conn.sendln("PRIVMSG $to :\c01ACTION $text\c01")
+		$.conn.sendln("PRIVMSG $to :\c01ACTION $text\c01")
 	}
 	
 	method send_ctcp($text, $to = $.where) {
-		$conn.sendln("NOTICE $to :\c01$text\c01");
+		$.conn.sendln("NOTICE $to :\c01$text\c01");
 	}
 }
