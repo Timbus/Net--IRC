@@ -26,10 +26,6 @@ class Net::IRC::Bot {
 	#State variables.
 	has %state;
 
-	method true {
-		%state<connected>;
-	}
-	
 	submethod BUILD {
 		callsame;
 		@modules.push(Net::IRC::DefaultHandlers.new);
@@ -37,12 +33,13 @@ class Net::IRC::Bot {
 
 	method !resetstate() {
 		%state = (
-			nick         => $nick;
-			altnicks     => @altnicks;
-			channels     => %(@channels >>=>>> 1);
-			loggedin     => False;
-			connected    => False;
-		);
+			nick         => $nick,
+			altnicks     => @altnicks,
+			autojoin     => @channels.clone,
+			channels     => Hash.new;
+			loggedin     => False,
+			connected    => False,
+		)
 	}
 
 	method !connect(){
@@ -51,7 +48,7 @@ class Net::IRC::Bot {
 		say "Connecting to $server on port $port";
 		my $r = $conn.open($server, $port)
 			or die $r;
-
+		sleep 1;
 		#Send PASS if needed
 		$conn.sendln("PASS $password") if $password;
 
@@ -98,30 +95,21 @@ class Net::IRC::Bot {
 		}
 	}
 
-	method run() {
+	method run() {					
+		self!disconnect;
+		self!connect;
 		loop {
 			#XXX: Support for timed events?
 			my $line = $conn.get
 				or die "Connection error.";
 
 			my $event = RawEvent.parse($line)
-				or say "Could not parse the following IRC event: $line" and next;
+				or $*ERR.say("Could not parse the following IRC event: $line") and next;
 			#---FOR DEBUGGING----
 			say ~$event;
 			#--------------------
 
 			self!dispatch($event);
-
-			CATCH {
-				$_.say;
-				my $failcount = 10;
-				loop {
-					self!disconnect;
-					self!connect;
-					last;
-					CATCH { $_.rethrow if ++$failcount > 5; }
-				}
-			}
 		}
 	}
 
@@ -130,19 +118,21 @@ class Net::IRC::Bot {
 #		@modules>>.*"irc_{ lc $event<command> }"($event);
 #	}
 
-	multi method !dispatch($rawevent) {
+	multi method !dispatch($raw) {
 		#Make an event object and fill it as much as we can.
 		#XXX: Should I just use a single cached Event to save memory?
-		my $event = Net::IRC::Event.new(
-			rawevent => $rawevent,
-			command  => ~$rawevent<command>,
-			conn     => $conn,
-			'state'  => %state,
 
-			who      => $rawevent<user> || $rawevent<host>,
-			where    => ~$rawevent<param>[0],
-			what     => ~$rawevent<param>[*-1],
+		my $event = Net::IRC::Event.new(
+			raw => $raw,
+			command  => ~$raw<command>,
+			conn     => $conn,
+			:state(%state),
+
+			who      => $raw<user> || $raw<host>,
+			where    => ~$raw<param>[0],
+			what     => ~$raw<param>[*-1],
 		);
+
 
 		# Dispatch to the raw event handlers.
 		@modules>>.*"irc_{ lc $event.command }"($event);
@@ -170,7 +160,7 @@ class Net::IRC::Bot {
 			}
 
 			when "KICK" {
-				$event.what = $rawevent<param>[1];
+				$event.what = $raw<param>[1];
 				@modules>>.*kicked($event);
 			}
 

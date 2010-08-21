@@ -1,5 +1,5 @@
 use v6;
-
+#TODO: 'is Match'
 class Net::IRC::Event {
 	#EVERY event has to have these:
 	has $.raw is rw;

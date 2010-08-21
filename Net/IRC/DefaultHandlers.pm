@@ -55,12 +55,12 @@ class Net::IRC::DefaultHandlers {
 	#XXX: Should we also track who has ops/voice/etc??
 	#353: User list for newly joined channel
 	multi method irc_353($ev) {
-		$ev.state{'channels'}{ ~$ev.rawevent<param>[2] } =
+		$ev.state{'channels'}{ ~$ev.raw<param>[2] } =
 			%( $ev.what.comb(/<-space - [\+\%\@\&\~]>+/) >>=>>> 1 );
 	}
 
 	multi method irc_kick($ev) {
-		my $kicked = ~$ev.rawevent<param>[1];
+		my $kicked = ~$ev.raw<param>[1];
 		if $kicked eq $ev.state<nick> {
 			$ev.state<channels>.delete( ~$ev.where );
 		}
