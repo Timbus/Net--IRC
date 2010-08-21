@@ -4,94 +4,95 @@ class Net::IRC::DefaultHandlers {
     ##Some default handler methods
 
 	#Error handler
-	multi method irc_error($event) {
-		say $event.raw;
-		#Or maybe die ~$event.raw?
+	multi method irc_error($ev) {
+		say $ev.raw;
+		#Or maybe die ~$ev.raw?
 	}
 	#Ping handler
-	multi method irc_ping($event) {
-		$conn.sendln("PONG :{ $event<text> }");
+	multi method irc_ping($ev) {
+		$ev.state<conn>.sendln("PONG :{ $ev.what }");
 	}
 
+	#XXX: Fix when 'state' works again
+	has $nickattempts = 0; 
 	#443: ERR_NICKNAMEINUSE
-	multi method irc_433($event) {
+	multi method irc_433($ev) {
 		#If this event occurs while we try to login, try to change nicks. Otherwise ignore it.
-		unless $loggedin {
+		if not $ev.state<loggedin> {
 			#Is it time to give up?
-			if @altnicks > $nickattempts {
-				$conn.disconnect();
-				fail('Cannot connect to server. All supplied nicknames are taken');
+			if $ev.state<altnicks> > $nickattempts {
+				die('Cannot connect to server. All supplied nicknames are taken');
 			}
 			else {
-				$conn.sendln( "NICK {@altnicks[$nickattempts++]}" );
+				$ev.conn.sendln( "NICK {$ev.state<altnicks>[$nickattempts++]}" );
 			}
 		}
 	}
 	#001: Welcome message sent after successful NICK/USER
 	#This event sets $loggedin to true, turning off the above nick handler
-	multi method irc_001($event) {
-		$loggedin = True;
+	multi method irc_001($ev) {
+		$ev.state<loggedin> = True;
 	}
 
 	#Autojoin method. Handy.
-	multi method connected() {
-		$conn.sendln("JOIN $_") for @autojoin;
+	multi method connected($ev) {
+		$ev.conn.sendln("JOIN $_") for $ev.state<autojoin>;
 	}
 
 
-	multi method irc_join($event) {
-		my $joiner = $.strip_nick(~$event<from>);
+	multi method irc_join($ev) {
+		my $joiner = $ev.who<nick>;
 		#Did someone join a channel we are in?
-		if $joiner ne $nick {
-			%channels{ ~$event<text> } = { $joiner => 1 };
+		if $joiner ne $ev.state<nick> {
+			my $ulist = $ev.state{'channels'}{ $ev.where };
+			$ulist.push($joiner => 1) unless $ulist{$joiner};
 		}
 
 		#Else did we ourselves join somewhere?
 		#Our own state will (SHOULD) be updated in a few milliseconds (irc_353)
 	}
 
+	#XXX: Should we also track who has ops/voice/etc??
 	#353: User list for newly joined channel
-	multi method irc_353($event) {
-		%channels{ ~$event<param>[2] } =
-			$event<text>.split(' ').grep(*).map({ $^a ~~ s/^ <[\+\%\@\&\~]>//; });
+	multi method irc_353($ev) {
+		$ev.state{'channels'}{ ~$ev.rawevent<param>[2] } =
+			%( $ev.what.comb(/<-space - [\+\%\@\&\~]>+/) >>=>>> 1 );
 	}
 
-	multi method irc_kick($event) {
-		my $kicked = ~$event<param>[1];
-		if $kicked eq $nick {
-			%channels.delete( ~$event<param>[0] );
+	multi method irc_kick($ev) {
+		my $kicked = ~$ev.rawevent<param>[1];
+		if $kicked eq $ev.state<nick> {
+			$ev.state<channels>.delete( ~$ev.where );
 		}
 		else {
-			my $users = %channels{ ~$event<param>[0] };
-			$users.delete($kicked);
-		}
-	}
-
-	multi method irc_part($event) {
-		my $parted = $.strip_nick(~$event<from>);
-		if $parted eq $nick {
-			%channels.delete( ~$event<param>[0] );
-		}
-		else {
-			my $users = %channels{ ~$event<param>[0] };
-			$users.delete($parted);
+			$ev.state<channels>{ ~$ev.where }.delete($kicked);
 		}
 	}
 
-	multi method irc_nick($event) {
-		my $oldnick = $.strip_nick(~$event<from>);
-		if $oldnick eq $nick {
-			$nick = ~$event<text>;
+	multi method irc_part($ev) {
+		my $parted = $ev.who<nick>;
+		if $parted eq $ev.state<nick> {
+			$ev.state<channels>.delete( ~$ev.where );
 		}
 		else {
-			for %channels.values -> $users {
+			$ev.state<channels>{ ~$ev.where }.delete($parted);
+		}
+	}
+
+	multi method irc_nick($ev) {
+		my $oldnick = $ev.who<nick>;
+		if $oldnick eq $ev.state<nick> {
+			$ev.state<nick> = ~$ev.what;
+		}
+		else {
+			for $ev.state<channels>.values -> $users {
 				$users.delete($oldnick) && $users<$nick> = 1 if $users<$oldnick>;
 			}
 		} 
 	}
 
-	proto method ctcp_version($event) {
-		$.send_ctcp("VERSION Perl6bot 0.001a Probably *nix", $from);
+	proto method ctcp_version($ev) {
+		$ev.send_ctcp("VERSION Perl6bot 0.001a Probably *nix");
 	}
 }
 

@@ -1,8 +1,9 @@
 module Modules::Autoident;
 
-role Autoident[Str $nspassword] {
+class Autoident {
+	has $password = die "Need no tell Autoident your password if you want it to work!";
 	multi method connected {
 		say "Identifying with nickserv..";
-		$.sendln("NS IDENTIFY $nspassword");
+		$.sendln("NS IDENTIFY $password");
 	}
 }

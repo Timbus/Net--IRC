@@ -1,6 +1,6 @@
 module Modules::ACME;
 
-role Eightball {
+class Eightball {
 	multi method said ( $msg where /^\!8ball <.ws> .+/, $from, $channel ) { #/
 		my @replies = "Probably not", "Nope", "Never", "Not a chance", "Doubt it", "No", 
 		"Answer hazy.. Oh wait there it is. It's a no.", "Yes.. Haha just kidding. No.", 
@@ -9,7 +9,7 @@ role Eightball {
 	}
 }
 
-role Unsmith {
+class Unsmith {
 	has @replies = open('Modules/unsmith').lines;
 	has regex sad {
 		[ ^|\s ]

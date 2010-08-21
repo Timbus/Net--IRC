@@ -2,15 +2,15 @@ use v6;
 
 class Net::IRC::Event {
 	#EVERY event has to have these:
-	has $.raw;
-	has $.command;
-	has $.conn;
-	has $.state;
+	has $.raw is rw;
+	has $.command is rw;
+	has $.conn is rw;
+	has $.state is rw;
 	
 	#Most events can have these.
-	has $.who;
-	has $.what;
-	has $.where;
+	has $.who is rw;
+	has $.what is rw;
+	has $.where is rw;
 
 	
 	##Utility methods

@@ -2,7 +2,7 @@ use v6;
 module Tell;
 
 
-role Tell {
+class Tell {
 	class Message {
 		has $.who;
 		has $.when;

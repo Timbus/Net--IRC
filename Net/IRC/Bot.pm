@@ -1,5 +1,7 @@
 use v6;
 use Net::IRC::Connection;
+use Net::IRC::DefaultHandlers;
+use Net::IRC::Event;
 
 class Net::IRC::Bot {
 	has $conn = Net::IRC::Connection.new();
@@ -15,31 +17,37 @@ class Net::IRC::Bot {
 	has $server   = "irc.perl.org";
 	has $port     = 6667;
 	has $password;
-	has @autojoin;
+	has @channels;
 	#Most important part of the bot.
 	has @modules;
 	#Options
 	has $autoreconnect = False;
 
 	#State variables.
-	has %state = (
-		nick         => $nick;
-		loggedin     => False;
-		connected    => False;
-	);
-	has $nickattempts = 0;
+	has %state;
 
 	method true {
 		%state<connected>;
 	}
+	
+	submethod BUILD {
+		callsame;
+		@modules.push(Net::IRC::DefaultHandlers.new);
+	}
 
 	method !resetstate() {
-		%state        = ();
-		$nickattempts = 0;
+		%state = (
+			nick         => $nick;
+			altnicks     => @altnicks;
+			channels     => %(@channels >>=>>> 1);
+			loggedin     => False;
+			connected    => False;
+		);
 	}
 
 	method !connect(){
 		#Establish connection to server
+		self!resetstate;
 		say "Connecting to $server on port $port";
 		my $r = $conn.open($server, $port)
 			or die $r;
@@ -61,12 +69,15 @@ class Net::IRC::Bot {
 			$conn.sendln("QUIT :$quitmsg");
 			$conn.close;
 		}
-		$!resetstate;
 	}
 
 	grammar RawEvent {
 		token TOP {
-			[':' [<user>||<server=host>] <.space> || <?>] <command> [ <.space>+ [':'$<params>=(.*)$ || $<params>=<-space>+] ]*
+			^ 
+			[':' [<user>|<server=host>] <.space> || <?>] 
+			<command> 
+			[ <.space>+ [':'$<params>=(.*)$ || $<params>=<-space>+] ]* 
+			$
 		}
 
 		token user {
@@ -74,7 +85,8 @@ class Net::IRC::Bot {
 		}
 
 		token host {
-			[ <-space - [\#.!@$%^&(){}\[\]|\-+_=~]>+ ] ** '.'
+			#Ok this is clearly not complete but whatever.
+			[ <-space - [. $ @ !]>+ ] ** '.'
 		}
 
 		token command {
@@ -93,19 +105,21 @@ class Net::IRC::Bot {
 				or die "Connection error.";
 
 			my $event = RawEvent.parse($line)
-				or warn "Could not parse the following IRC event: $line" and next;
+				or say "Could not parse the following IRC event: $line" and next;
 			#---FOR DEBUGGING----
 			say ~$event;
 			#--------------------
 
-			$!dispatch($event);
+			self!dispatch($event);
 
 			CATCH {
-				my $failcount = 0;
-				while $failcount < 5 {
-					$!disconnect;
-					$!connect;
-					CATCH { ++$failcount }
+				$_.say;
+				my $failcount = 10;
+				loop {
+					self!disconnect;
+					self!connect;
+					last;
+					CATCH { $_.rethrow if ++$failcount > 5; }
 				}
 			}
 		}
@@ -125,73 +139,54 @@ class Net::IRC::Bot {
 			conn     => $conn,
 			'state'  => %state,
 
-			who      => $rawevent<from>,
-			where    => $rawevent<param>[0],
-			what     => $rawevent<param>[*-1],
+			who      => $rawevent<user> || $rawevent<host>,
+			where    => ~$rawevent<param>[0],
+			what     => ~$rawevent<param>[*-1],
 		);
 
 		# Dispatch to the raw event handlers.
-		@modules>>.*"irc_{ lc $event<command> }"($event);
+		@modules>>.*"irc_{ lc $event.command }"($event);
 
-		given ~$event<command> {
+		given uc($event.command) {
+			
 			when "PRIVMSG" {
-				my $from = $.strip_nick(~$event<from>);
-				my $channel = ~$event<param>[0] ~~ /^\#.*/ || $from;
-				my $text = ~$event<text>;
-
 				#Check to see if its a CTCP request.
-				if $text ~~ /^\c01 (.*) \c01$/ {
-					$text = ~$0;
-					say "Received CTCP $text from $from" ~
-						( $channel eq $from ?? '.' !! " (to channel $channel)." );
+				if $event.what ~~ /^\c01 (.*) \c01$/ {
+					my $text = ~$0;
+					say "Received CTCP $text from {$event.who}" ~
+						( $event.where eq $event.who ?? '.' !! " (to channel $event.where)." );
 
-					if $text ~~ /^ ACTION <.ws> (.*) $/ {
-						@modules.*emoted(~$0, ~$from, ~$channel);
-					}
-					else {
-						$text ~~ /^ (.+?) [<.ws>(.*)]? $/;
-						if $1 {
-							@modules>>.*"ctcp_{ lc $0 }"(~$1, ~$from, ~$channel);
-						}
-						else {
-							@modules>>.*"ctcp_{ lc $0 }"(~$from, ~$channel);
-						}
-					}
+					$text ~~ /^ (.+?) [<.ws> (.*)]? $/;
+					$event.what = $1 && ~$1;
+					@modules>>.*"ctcp_{ lc $0 }"($event);
+					#If its a CTCP ACTION then we also call 'emoted'
+					@modules>>.*emoted($event) if uc $0 eq 'ACTION';		
 				}
-
 				else {
-					@modules>>.*said(~$text, ~$from, ~$channel);
+					@modules>>.*said($event);
 				}
 			}
 
 			when "NOTICE" {
-				my $from = strip_nick(~$event<from>);
-				my $channel = ~$event<param>[0] ~~ /^\#.*/ || $from;
-				@modules>>.*noticed(~$event<text>, ~$from, ~$channel);
+				@modules>>.*noticed($event);
 			}
 
 			when "KICK" {
-				my $from = strip_nick(~$event<from>);
-				my $channel = ~$event<param>[0];
-				my $kicked = ~$event<param>[1];
-				@modules>>.*kicked($kicked, ~$event<text>, $from, $channel);
+				$event.what = $rawevent<param>[1];
+				@modules>>.*kicked($event);
 			}
 
 			when "JOIN" {
-				my $from = strip_nick(~$event<from>);
-				my $channel = ~$event<text>;
-				@modules>>.*joined($from, $channel);
+				@modules>>.*joined($event);
 			}
 
 			when "NICK" {
-				my $from = strip_nick(~$event<from>);
-				my $to = ~$event<text> // ~$event<param>[0];
-				@modules>>.*nickchange($from, $to);
+				@modules>>.*nickchange($event);
 			}
 
 			when "376"|"422" {
 				#End of motd / no motd. (Usually) The last thing a server sends the client on connect.
-				@modules>>.*connected;
+				@modules>>.*connected($event);
 			}
 		}
 	}
