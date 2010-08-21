@@ -146,9 +146,7 @@ class Net::IRC::Bot {
 
 		# Dispatch to the raw event handlers.
 		@modules>>.*"irc_{ lc $event.command }"($event);
-
-		given uc($event.command) {
-			
+		given uc $event.command {
 			when "PRIVMSG" {
 				#Check to see if its a CTCP request.
 				if $event.what ~~ /^\c01 (.*) \c01$/ {
@@ -186,7 +184,7 @@ class Net::IRC::Bot {
 
 			when "376"|"422" {
 				#End of motd / no motd. (Usually) The last thing a server sends the client on connect.
-				@modules>>.*connected($event);
+				@modules>>.*connected($event)
 			}
 		}
 	}

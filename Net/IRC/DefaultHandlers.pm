@@ -10,7 +10,7 @@ class Net::IRC::DefaultHandlers {
 	}
 	#Ping handler
 	multi method irc_ping($ev) {
-		$ev.state<conn>.sendln("PONG :{ $ev.what }");
+		$ev.conn.sendln("PONG :{ $ev.what }");
 	}
 
 	#XXX: Fix when 'state' works again

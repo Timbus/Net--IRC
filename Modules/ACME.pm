@@ -1,11 +1,11 @@
 module Modules::ACME;
 
 class Eightball {
-	multi method said ( $msg where /^\!8ball <.ws> .+/, $from, $channel ) { #/
+	multi method said ( $ev where /^\!8ball <.ws> .+/ ) { #/
 		my @replies = "Probably not", "Nope", "Never", "Not a chance", "Doubt it", "No", 
 		"Answer hazy.. Oh wait there it is. It's a no.", "Yes.. Haha just kidding. No.", 
 		"No.", "Aww hell naw";
-		$.msg("$from: { @replies.pick }", $channel);
+		$ev.msg("{$ev.who}: { @replies.pick }");
 	}
 }
 
@@ -16,7 +16,7 @@ class Unsmith {
 		[':<' | ':(' | '>:' | '):' | [ 'un'?'smith' ] | 'sad''face'? ]
 		[ $|\s ]
 	}
-	multi method said ( $msg where &sad, $, $channel ) {
-		$.msg(@replies.pick, $channel);
+	multi method said ( $ev where &sad) {
+		$ev.msg(@replies.pick);
 	}
 }
