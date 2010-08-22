@@ -28,7 +28,7 @@ Elegant. Simple. Probably doesn't compile.
  	server => 'irc.freenode.net',
  	channels => <#bottest>,
  	
- 	modules = [AnnoyUsers.new(), Autoident.new(password => 'nspassw0rd')],
+ 	modules = (AnnoyUsers.new(), Autoident.new(password => 'nspassw0rd')),
  ).run;
 
 =head1 Description
