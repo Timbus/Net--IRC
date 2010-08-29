@@ -5,11 +5,12 @@ class Net::IRC::DefaultHandlers {
 
 	#Error handler
 	multi method irc_error($ev) {
-		say $ev.raw;
+		die $ev.raw;
 		#Or maybe die ~$ev.raw?
 	}
 	#Ping handler
 	multi method irc_ping($ev) {
+		say $ev.raw;
 		$ev.conn.sendln("PONG :{ $ev.what }");
 	}
 

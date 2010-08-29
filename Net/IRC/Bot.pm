@@ -35,8 +35,8 @@ class Net::IRC::Bot {
 		%state = (
 			nick         => $nick,
 			altnicks     => @altnicks,
-			autojoin     => @channels.clone,
-			channels     => Hash.new;
+			autojoin     => [@channels],
+			channels     => %(),
 			loggedin     => False,
 			connected    => False,
 		)
@@ -57,7 +57,6 @@ class Net::IRC::Bot {
 		#USER Parameters: 	<username> <hostname> <servername> <realname>
 		$conn.sendln("NICK $nick");
 		$conn.sendln("USER $username abc.xyz.net $server :$realname");
-
 		%state<connected> = True;
 	}
 
@@ -123,14 +122,14 @@ class Net::IRC::Bot {
 		#XXX: Should I just use a single cached Event to save memory?
 
 		my $event = Net::IRC::Event.new(
-			raw => $raw,
-			command  => ~$raw<command>,
-			conn     => $conn,
+			:raw($raw),
+			:command(~$raw<command>),
+			:conn($conn),
 			:state(%state),
 
-			who      => $raw<user> || $raw<host>,
-			where    => ~$raw<param>[0],
-			what     => ~$raw<param>[*-1],
+			:who($raw<user> || $raw<server>),
+			:where(~$raw<param>[0]),
+			:what(~$raw<param>[*-1]),
 		);
 
 
