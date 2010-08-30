@@ -34,7 +34,7 @@ class Net::IRC::Bot {
 	method !resetstate() {
 		%state = (
 			nick         => $nick,
-			altnicks     => @altnicks,
+			altnicks     => [@altnicks],
 			autojoin     => [@channels],
 			channels     => %(),
 			loggedin     => False,
@@ -48,7 +48,6 @@ class Net::IRC::Bot {
 		say "Connecting to $server on port $port";
 		my $r = $conn.open($server, $port)
 			or die $r;
-		sleep 1;
 		#Send PASS if needed
 		$conn.sendln("PASS $password") if $password;
 
@@ -128,8 +127,8 @@ class Net::IRC::Bot {
 			:state(%state),
 
 			:who($raw<user> || $raw<server>),
-			:where(~$raw<param>[0]),
-			:what(~$raw<param>[*-1]),
+			:where(~$raw<params>[0]),
+			:what(~$raw<params>[*-1]),
 		);
 
 
@@ -159,7 +158,7 @@ class Net::IRC::Bot {
 			}
 
 			when "KICK" {
-				$event.what = $raw<param>[1];
+				$event.what = $raw<params>[1];
 				@modules>>.*kicked($event);
 			}
 
