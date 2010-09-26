@@ -10,7 +10,7 @@ class Net::IRC::Bot {
 	#These are not stored as state, they are just used for the bot's "start state"
 	#Changing things like $nick and @channels are tracked in %state
 	has $nick     = "Rakudobot";
-	has @altnicks = $nick «~« ("_","__",^10);
+	has @altnicks = $nick X~ ("_","__",^10);
 	has $username = "Clunky";
 	has $realname = '$@%# yeah, perl 6!';
 

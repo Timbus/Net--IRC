@@ -45,7 +45,7 @@ class Net::IRC::DefaultHandlers {
 		#Did someone join a channel we are in?
 		if $joiner ne $ev.state<nick> {
 			my $ulist = $ev.state{'channels'}{ $ev.where };
-			$ulist.push($joiner => 1) unless $ulist{$joiner};
+			$ulist{$joiner} = 1;
 		}
 
 		#Else did we ourselves join somewhere?
@@ -57,6 +57,7 @@ class Net::IRC::DefaultHandlers {
 	multi method irc_353($ev) {
 		$ev.state{'channels'}{ ~$ev.raw<params>[2] } =
 			%( $ev.what.comb(/<-space - [\+\%\@\&\~]>+/) >>=>>> 1 );
+		say $ev.state{'channels'}.perl;
 	}
 
 	multi method irc_kick($ev) {
