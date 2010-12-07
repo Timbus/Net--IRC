@@ -18,10 +18,12 @@ class Net::IRC::Bot {
 	has $port     = 6667;
 	has $password;
 	has @channels;
-	#Most important part of the bot.
+	
+		#Most important part of the bot.
 	has @modules;
 	#Options
 	has $autoreconnect = False;
+	has $debug = False;
 
 	#State variables.
 	has %state;
@@ -103,18 +105,12 @@ class Net::IRC::Bot {
 
 			my $event = RawEvent.parse($line)
 				or $*ERR.say("Could not parse the following IRC event: $line") and next;
-			#---FOR DEBUGGING----
-			say ~$event;
-			#--------------------
+
+			say ~$event if $debug;
 
 			self!dispatch($event);
 		}
 	}
-
-#	multi method !dispatch($event where 'ERROR'}) {
-#		#Specifically filter these out, they're special.
-#		@modules>>.*"irc_{ lc $event<command> }"($event);
-#	}
 
 	multi method !dispatch($raw) {
 		#Make an event object and fill it as much as we can.
@@ -140,7 +136,7 @@ class Net::IRC::Bot {
 				if $event.what ~~ /^\c01 (.*) \c01$/ {
 					my $text = ~$0;
 					say "Received CTCP $text from {$event.who}" ~
-						( $event.where eq $event.who ?? '.' !! " (to channel $event.where)." );
+						( $event.where eq $event.who ?? '.' !! " (to channel $event.where)." );#?
 
 					$text ~~ /^ (.+?) [<.ws> (.*)]? $/;
 					$event.what = $1 && ~$1;

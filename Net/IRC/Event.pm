@@ -1,5 +1,5 @@
 use v6;
-#TODO: 'is Match'
+
 class Net::IRC::Event {
 	#EVERY event has to have these:
 	has $.raw is rw;
@@ -37,5 +37,10 @@ class Net::IRC::Event {
 	
 	method send_ctcp($text, $to = $.where) {
 		$.conn.sendln("NOTICE $to :\c01$text\c01");
+	}
+	
+	
+	method Str {
+		$.what ?? ~$.what !! $.raw;
 	}
 }

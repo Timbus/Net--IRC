@@ -13,7 +13,6 @@ class Net::IRC::DefaultHandlers {
 		$ev.conn.sendln("PONG :{ $ev.what }");
 	}
 
-	#XXX: Fix when 'state' works again
 	has $nickattempts = 0; 
 	#443: ERR_NICKNAMEINUSE
 	multi method irc_433($ev) {
@@ -24,7 +23,8 @@ class Net::IRC::DefaultHandlers {
 				die('Cannot connect to server. All supplied nicknames are taken');
 			}
 			else {
-				$ev.conn.sendln( "NICK {$ev.state<altnicks>[$nickattempts++]}" );
+				$ev.state<nick> = $ev.state<altnicks>[$nickattempts++];
+				$ev.conn.sendln( "NICK {$ev.state<nick>}" );
 			}
 		}
 	}
@@ -57,7 +57,6 @@ class Net::IRC::DefaultHandlers {
 	multi method irc_353($ev) {
 		$ev.state{'channels'}{ ~$ev.raw<params>[2] } =
 			%( $ev.what.comb(/<-space - [\+\%\@\&\~]>+/) >>=>>> 1 );
-		say $ev.state{'channels'}.perl;
 	}
 
 	multi method irc_kick($ev) {
