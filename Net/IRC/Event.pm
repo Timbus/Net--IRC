@@ -17,7 +17,7 @@ class Net::IRC::Event {
 	method msg($text, $to = $.where) {
 		##IRC RFC specifies 510 bytes as the maximum allowed to send per line. 
 		#I'm going with 480, as 510 seems to get cut off on some servers.
-		say "msging $text to $to";
+
 		my $prepend = "PRIVMSG $to :";
 		my $maxlen = 480-$prepend.bytes;
 		for $text.split(/\c13?\c10/) -> $line is rw {
