@@ -34,9 +34,13 @@ Elegant. Simple. Probably doesn't compile.
 =head1 Description
 
 Its an IRC Bot framework! Theres not much else to it.
-It's currently in active development (read:broken + everything is changing constantly),
-so unless you just want ot look or have an experimental tinker, you might want to wait 
-for just a little bit.
+It's currently in active development, but it is mostly stable until perl 6 implements
+either threads or async I/O so it can work correctly as a bot (timed events and things
+that block the runtime are not possible yet.)
+
+The framework makes extensive use of the added features perl 6 provides, and is an 
+excellent example of how concise and powerful the language is... With emphasis on 
+concise:- The core code is only about 350 lines!
 
 =head1 Methods and Attributes
 
@@ -47,7 +51,7 @@ List of attributes + their defaults:
 
 $nick = "Rakudobot";
 
-@altnicks = $nick «~« ("_","__",^10);
+@altnicks = $nick Z~ ("_","__",^10);
 
 $username = "Clunky";
 
@@ -59,26 +63,29 @@ $port = 6667;
 
 $password;
 
-@autojoin;
+@autojoin = ["#bottest"];
 
 $autoreconnect = False;
 
 $throttle = False;
 
+@modules;
 
 =head2 Callbacks
 
-Callbacks are event handlers created by you, the bot maker. They are dispatched to by name
-when an appropriate IRC event is fired.
+Callbacks are event handlers created by you, the bot maker. They are dispatched to by
+name when an appropriate IRC event is fired.
 
-There are currently six 'main' types of events: C<said>, C<acted>, C<joined>, C<noticed>, C<nickchanged>
-and C<connected>. They will be called with a Net::IRC::Event object containing every detail possible 
-about the event. [Details to come soon]
+There are currently six 'main' types of events: C<said>, C<acted>, C<joined>, 
+C<noticed>, C<nickchanged> and C<connected>. They will be called with a 
+Net::IRC::Event object containing every detail possible about the event. [Details to 
+come soon]
 
-For any event that doesn't fit into the above category, you will need to set up a raw event handler.
-Raw handlers begin with 'irc_' and won't have their Event objects properly filled [TODO: List what will be filled]
-The method C<irc_433> for example, will be called when ERR_NICKNAMEINUSE is thrown. C<irc_privmsg> will 
-be just like C<said>, except it will be called first.
+For any event that doesn't fit into the above category, you will need to set up a raw 
+event handler. Raw handlers begin with 'irc_' and won't have their Event objects 
+properly filled [TODO: List what will be filled]
+The method C<irc_433> for example, will be called when ERR_NICKNAMEINUSE is thrown. 
+C<irc_privmsg> will be just like C<said>, except it will be called first.
 
 =head2 Helper methods
 
