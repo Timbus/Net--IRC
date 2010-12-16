@@ -1,6 +1,6 @@
 =head1 Net::IRC
 
-Elegant. Simple. Probably doesn't compile.
+Elegant. Simple. Probably compiles.
 
 =head1 Synopsis
 
