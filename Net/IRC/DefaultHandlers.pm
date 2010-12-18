@@ -56,7 +56,7 @@ class Net::IRC::DefaultHandlers {
 	#353: User list for newly joined channel
 	multi method irc_353($ev) {
 		$ev.state{'channels'}{ ~$ev.raw<params>[2] } =
-			%( $ev.what.comb(/<-space - [\+\%\@\&\~]>+/) >>=>>> 1 );
+			%( $ev.what.split(' ')>>.subst(/^[\+\%\@\&\~]/, '') >>=>>> 1 );
 	}
 
 	multi method irc_kick($ev) {
