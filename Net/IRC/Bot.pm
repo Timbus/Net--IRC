@@ -22,7 +22,6 @@ class Net::IRC::Bot {
 		#Most important part of the bot.
 	has @modules;
 	#Options
-	has $autoreconnect = False;
 	has $debug = False;
 
 	#State variables.
@@ -36,8 +35,8 @@ class Net::IRC::Bot {
 	method !resetstate() {
 		%state = (
 			nick         => $nick,
-			altnicks     => [@altnicks],
-			autojoin     => [@channels],
+			altnicks     => @altnicks,
+			autojoin     => @channels,
 			channels     => %(),
 			loggedin     => False,
 			connected    => False,
@@ -139,7 +138,7 @@ class Net::IRC::Bot {
 				if $event.what ~~ /^\c01 (.*) \c01$/ {
 					my $text = ~$0;
 					say "Received CTCP $text from {$event.who}" ~
-						( $event.where eq $event.who ?? '.' !! " (to channel $event.where)." );#?
+						( $event.where eq $event.who ?? '.' !! " (to channel {$event.where})." );#?
 
 					$text ~~ /^ (.+?) [<.ws> (.*)]? $/;
 					$event.what = $1 && ~$1;
