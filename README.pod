@@ -44,7 +44,7 @@ concise:- The core code is only about 350 lines!
 
 =head1 Methods and Attributes
 
-Net::IRC::Bot only really has one needed method: run(). Everything else is setup using 
+Net::IRC::Bot only really has one needed method: run(). Everything else is setup using
 parameters to new()
 
 List of attributes + their defaults:
@@ -81,11 +81,24 @@ C<noticed>, C<nickchanged> and C<connected>. They will be called with a
 Net::IRC::Event object containing every detail possible about the event. [Details to 
 come soon]
 
-For any event that doesn't fit into the above category, you will need to set up a raw 
+For any event that doesn't fit into the above category, you will need to set up a raw
 event handler. Raw handlers begin with 'irc_' and won't have their Event objects 
 properly filled [TODO: List what will be filled]
 The method C<irc_433> for example, will be called when ERR_NICKNAMEINUSE is thrown. 
 C<irc_privmsg> will be just like C<said>, except it will be called first.
+
+
+Untidy collection of event object contents for each handler:
+
+said:
+C<.who> said C<.what> in channel C<.where> (if it was a private message, .where will be our 
+nickname. If you dont want to check C<.state<nick>> for equality then you can always test
+if C<.where> starts with a hash)
+
+nickchange:
+C<.who> changed nick to C<.what>
+
+
 
 =head2 Helper methods
 

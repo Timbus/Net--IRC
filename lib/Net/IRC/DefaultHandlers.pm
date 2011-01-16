@@ -44,7 +44,7 @@ class Net::IRC::DefaultHandlers {
 		my $joiner = $ev.who<nick>;
 		#Did someone join a channel we are in?
 		if $joiner ne $ev.state<nick> {
-			my $ulist = $ev.state{'channels'}{ $ev.where };
+			my $ulist = $ev.state<channels>{ $ev.where };
 			$ulist{$joiner} = 1;
 		}
 
@@ -55,7 +55,7 @@ class Net::IRC::DefaultHandlers {
 	#XXX: Should we also track who has ops/voice/etc??
 	#353: User list for newly joined channel
 	multi method irc_353($ev) {
-		$ev.state{'channels'}{ ~$ev.raw<params>[2] } =
+		$ev.state<channels>{ ~$ev.raw<params>[2] } =
 			%( $ev.what.split(' ')>>.subst(/^[\+\%\@\&\~]/, '') >>=>>> 1 );
 	}
 

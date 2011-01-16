@@ -117,7 +117,7 @@ class Net::IRC::Bot {
 	multi method !dispatch($raw) {
 		#Make an event object and fill it as much as we can.
 		#XXX: Should I just use a single cached Event to save memory?
-
+		
 		my $event = Net::IRC::Event.new(
 			:raw($raw),
 			:command(~$raw<command>),
@@ -137,8 +137,10 @@ class Net::IRC::Bot {
 				#Check to see if its a CTCP request.
 				if $event.what ~~ /^\c01 (.*) \c01$/ {
 					my $text = ~$0;
-					say "Received CTCP $text from {$event.who}" ~
-						( $event.where eq $event.who ?? '.' !! " (to channel {$event.where})." );#?
+					if $debug {
+						say "Received CTCP $text from {$event.who}" ~
+						( $event.where eq $event.who ?? '.' !! " (to channel {$event.where})." );
+					}
 
 					$text ~~ /^ (.+?) [<.ws> (.*)]? $/;
 					$event.what = $1 && ~$1;
