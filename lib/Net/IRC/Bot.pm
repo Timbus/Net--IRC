@@ -17,7 +17,8 @@ class Net::IRC::Bot {
 	has $server   = "irc.perl.org";
 	has $port     = 6667;
 	has $password;
-	has @channels;
+	
+	has @channels = [];
 	
 		#Most important part of the bot.
 	has @modules;

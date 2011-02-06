@@ -10,14 +10,15 @@ Elegant. Simple. Probably compiles.
  class AnnoyUsers does ExtraAnnoying {
      #Will be called when the bot gets a join event
      multi method joined ($e) {
-          $e.reply("Hi there, {$e.who}!"); 
+          $e.reply("Hi there, {$e.who<nick>}!"); 
      }
  }
  
  #Roles can let you break up large event handler modules into smaller ones.
  role ExtraAnnoying {
+ 	had %enemies = ('bob', 'sam', 'chanserv') X=> 1;
      #Magical type constraints only let this event be called when $e.who is an enemy
-     multi method said ($e where {.who ~~ %enemies}) {
+     multi method said ($e where {.who<nick> ~~ %enemies}) {
          $e.reply($e.msg); #Parrot back what was said;
      }
  }
@@ -49,27 +50,20 @@ parameters to new()
 
 List of attributes + their defaults:
 
-$nick = "Rakudobot";
+ $nick = "Rakudobot";
+ @altnicks = $nick Z~ ("_","__",^10);
+ $username = "Clunky";
+ $realname = '$@%# yeah, perl 6!';
+ 
+ $server = "irc.perl.org";
+ $port = 6667;
+ $password;
+ @channels = [];
+ 
+ @modules;
+ 
+ $debug = False;
 
-@altnicks = $nick Z~ ("_","__",^10);
-
-$username = "Clunky";
-
-$realname = '$@%# yeah, perl 6!';
-
-$server = "irc.perl.org";
-
-$port = 6667;
-
-$password;
-
-@autojoin = ["#bottest"];
-
-$autoreconnect = False;
-
-$throttle = False;
-
-@modules;
 
 =head2 Callbacks
 
@@ -91,8 +85,8 @@ C<irc_privmsg> will be just like C<said>, except it will be called first.
 Untidy collection of event object contents for each handler:
 
 said:
-C<.who> said C<.what> in channel C<.where> (if it was a private message, .where will be our 
-nickname. If you dont want to check C<.state<nick>> for equality then you can always test
+C<.who> said C<.what> in channel C<.where> (if it was a private message, C<.where> will be our 
+nickname. If you dont want to check C<.state<nick\>> for equality then you can always test
 if C<.where> starts with a hash)
 
 nickchange:
@@ -102,4 +96,5 @@ C<.who> changed nick to C<.what>
 
 =head2 Helper methods
 
-say, act, send_ctcp
+Helper methods are kept in the Event that every callback is provided with. The current
+three methods are C<.msg>, C<.act> and C<.send_ctcp>. [details on each to come soon]
