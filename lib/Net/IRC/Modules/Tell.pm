@@ -8,9 +8,9 @@ class Tell {
 	has %messages;
 	
 	multi method said ( $ev where {$ev.what ~~ /^<{$ev.state<nick>}><.punct>?<.ws>'tell'/} ) {
-		my $from = $ev.who<nick>.lc;
+		my $from = $ev.who<nick>;
 		if $ev.what ~~ /tell <.ws> $<name>=<-space -punct>+ <.punct>? <.ws> $<msg>=[.+]/ {
-			if $<name>.lc eq $from|'me' {
+			if $<name>.lc eq $from.lc|'me' {
 				$ev.msg("$from: I think you can tell yourself that!");
 				return;
 			}
@@ -22,32 +22,53 @@ class Tell {
 		}
 	}
 	
-	#TODO: Put the following methods into a single private method.
 	multi method said ( $ev where {$ev.who<nick>.lc ~~ %messages} ) {
-		my $reciever = $ev.who<nick>.lc;
-		for %messages{$reciever}.values -> $msg {
-			#TODO: Make sub to determine a cleaner elapsed time. 
-			my $elapsed = $msg.when - time;
-			$ev.msg("$reciever: <{$msg.sender}> {$msg.message} ::$elapsed seconds ago");
-		}
-		%messages{$reciever} = [];
+		self!deliver-message($ev)
 	}
 	
 	multi method joined ( $ev where {$ev.who<nick>.lc ~~ %messages} ) {
-		my $reciever = $ev.who<nick>.lc;
-		for %messages{$reciever}.values -> $msg {
-			my $elapsed = $msg.when - time;
-			$ev.msg("$reciever: <{$msg.sender}> {$msg.message} ::$elapsed seconds ago");
-		}
-		%messages{$reciever} = [];
+		self!deliver-message($ev)
 	}
 	
 	multi method nickchange ( $ev where {$ev.what.lc ~~ %messages} ) {
-		my $reciever = $ev.what.lc;
-		for %messages{$reciever}.values -> $msg {
-			my $elapsed = $msg.when - time;
-			$ev.msg("$reciever: <{$msg.sender}> {$msg.message} ::$elapsed seconds ago");
+		self!deliver-message($ev)
+	}
+	
+	method !deliver-message( $ev ){
+		my $reciever = $ev.who<nick>;
+		for %messages{$reciever.lc}.values -> $msg {
+			my $elapsed = self!format-time(time - $msg.when);
+			$ev.msg("$reciever: <{$msg.sender}> {$msg.message} ::$elapsed ago");
 		}
-		%messages{$reciever} = [];
+		%messages{$reciever.lc} = [];
+	}
+	
+	method !format-time($elapsed) {
+		given $elapsed { 
+			when * < 60 { 
+				return "$elapsed second"~($elapsed != 1 ?? 's' !! '');
+			}
+			when * < 3570 {
+				my $mins = ($elapsed / 60).round;
+				return "$mins minute"~($mins != 1 ?? 's' !! '');
+			}
+			when * < 84600 {
+				my $hours = ($elapsed / 60 / 60).round;
+				return "$hours hour"~($hours != 1 ?? 's' !! '');
+			}
+			when * < 604800 {
+				my $days = ($elapsed / 60 / 60 / 24).round;
+				my $hours = ($elapsed % 86400 / 60 / 60).round;
+				return 
+					"$days day" ~
+					($days != 1 ?? 's' !! '') ~ 
+						$hours ?? (", $hours hour" ~
+						($hours != 1 ?? 's' !! '') ) !! '';
+			} 
+			dafault {
+				my $days = ($elapsed / 60 / 60 / 24).round;
+				return "$days day"~($days != 1 ?? 's' !! '');
+			}
+		}
 	}
 }
