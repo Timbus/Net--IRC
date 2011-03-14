@@ -4,7 +4,7 @@ use Net::IRC::DefaultHandlers;
 use Net::IRC::Event;
 
 class Net::IRC::Bot {
-	has $conn = Net::IRC::Connection.new();
+	has $conn is rw;
 
 	#Set some sensible defaults for the bot.
 	#These are not stored as state, they are just used for the bot's "start state"
@@ -48,8 +48,8 @@ class Net::IRC::Bot {
 		#Establish connection to server
 		self!resetstate;
 		say "Connecting to $server on port $port";
-		my $r = $conn.open($server, $port)
-			or die $r;
+		$conn = Net::IRC::Connection.new(peeraddr => $server, peerport => $port);
+
 		#Send PASS if needed
 		$conn.sendln("PASS $password") if $password;
 
@@ -103,7 +103,7 @@ class Net::IRC::Bot {
 		self!connect;
 		loop {
 			#XXX: Support for timed events?
-			my $line = $conn.get
+			my $line = $conn.get.chomp
 				or die "Connection error.";
 
 			my $event = RawEvent.parse($line)
