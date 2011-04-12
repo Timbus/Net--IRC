@@ -8,7 +8,7 @@ class Tell {
 	has %messages;
 	
 	multi method said ( $ev where {$ev.what ~~ /^<{$ev.state<nick>}><.punct>?<.ws>'tell'/} ) {
-		my $from = $ev.who<nick>;
+		my $from = $ev.who;
 		if $ev.what ~~ /tell <.ws> $<name>=<-space -punct>+ <.punct>? <.ws> $<msg>=[.+]/ {
 			if $<name>.lc eq $from.lc|'me' {
 				$ev.msg("$from: I think you can tell yourself that!");
@@ -22,11 +22,11 @@ class Tell {
 		}
 	}
 	
-	multi method said ( $ev where {$ev.who<nick>.lc ~~ %messages} ) {
+	multi method said ( $ev where {$ev.who.lc ~~ %messages} ) {
 		self!deliver-message($ev)
 	}
 	
-	multi method joined ( $ev where {$ev.who<nick>.lc ~~ %messages} ) {
+	multi method joined ( $ev where {$ev.who.lc ~~ %messages} ) {
 		self!deliver-message($ev)
 	}
 	
@@ -35,8 +35,8 @@ class Tell {
 	}
 	
 	method !deliver-message( $ev ){
-		my $reciever = $ev.who<nick>;
-		for %messages{$reciever.lc}.values -> $msg {
+		my $reciever = $ev.who;
+		for @(%messages{$reciever.lc}) -> $msg {
 			my $elapsed = self!format-time(time - $msg.when);
 			$ev.msg("$reciever: <{$msg.sender}> {$msg.message} ::$elapsed ago");
 		}
