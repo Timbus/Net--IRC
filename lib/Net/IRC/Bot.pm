@@ -1,5 +1,4 @@
 use v6;
-use Net::IRC::Connection;
 use Net::IRC::DefaultHandlers;
 use Net::IRC::Event;
 
@@ -20,7 +19,7 @@ class Net::IRC::Bot {
 	
 	has @channels = [];
 	
-		#Most important part of the bot.
+	#Most important part of the bot.
 	has @modules;
 	#Options
 	has $debug = False;
@@ -48,7 +47,10 @@ class Net::IRC::Bot {
 		#Establish connection to server
 		self!resetstate;
 		say "Connecting to $server on port $port";
-		$conn = Net::IRC::Connection.new(peeraddr => $server, peerport => $port);
+		$conn = IO::Socket::INET.new(host => $server, port => $port)
+			but role { 
+				method sendln(Str $string){self.send($string~"\c13\c10")}
+			};
 
 		#Send PASS if needed
 		$conn.sendln("PASS $password") if $password;
@@ -103,14 +105,13 @@ class Net::IRC::Bot {
 		self!connect;
 		loop {
 			#XXX: Support for timed events?
-			my $line = $conn.get.chomp
+			my $line = $conn.get
 				or die "Connection error.";
 
 			my $event = RawEvent.parse($line)
 				or $*ERR.say("Could not parse the following IRC event: $line") and next;
 
 			say ~$event if $debug;
-
 			self!dispatch($event);
 		}
 	}
@@ -118,14 +119,15 @@ class Net::IRC::Bot {
 	multi method !dispatch($raw) {
 		#Make an event object and fill it as much as we can.
 		#XXX: Should I just use a single cached Event to save memory?
+		my $who = ($raw<user> || $raw<server>);
+		$who does role { method Str { self<nick> || self<host> } };
 		
 		my $event = Net::IRC::Event.new(
 			:raw($raw),
 			:command(~$raw<command>),
 			:conn($conn),
 			:state(%state),
-
-			:who($raw<user> || $raw<server>),
+			:who($who),
 			:where(~$raw<params>[0]),
 			:what(~$raw<params>[*-1]),
 		);

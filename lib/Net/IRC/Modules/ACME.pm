@@ -7,7 +7,7 @@ class Eightball {
 	"No.", "Aww hell naw";
 	
 	multi method said ( $ev where {.what ~~ /^\!8ball <.ws> .+/} ) {
-		$ev.msg("{$ev.who<nick>}: { @replies.pick }");
+		$ev.msg("{$ev.who}: { @replies.pick }");
 	}
 }
 
