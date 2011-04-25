@@ -1,0 +1,7 @@
+{
+	name: "Net::IRC::Bot",
+	version: "0.9",
+	description: "An IRC bot framework",
+	depends: [],
+	source-url: "git://github.com/TiMBuS/Net--IRC.git"
+}
