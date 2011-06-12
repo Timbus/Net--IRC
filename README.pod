@@ -5,7 +5,7 @@ Elegant. Simple. Probably compiles.
 =head1 Synopsis
 
  use Net::IRC::Bot;
- use Modules::Autoident;
+ use Net::IRC::Modules::Autoident;
  
  class AnnoyUsers does ExtraAnnoying {
      #Will be called when the bot gets a join event
