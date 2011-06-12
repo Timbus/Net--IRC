@@ -25,11 +25,11 @@ Elegant. Simple. Probably compiles.
  
  
  Net::IRC::Bot.new(
- 	nick => 'KickMe',
- 	server => 'irc.freenode.net',
+ 	nick     => 'KickMe',
+ 	server   => 'irc.freenode.net',
  	channels => <#bottest>,
  	
- 	modules = (AnnoyUsers.new(), Autoident.new(password => 'nspassw0rd')),
+ 	modules  => (AnnoyUsers.new(), Autoident.new(password => 'nspassw0rd')),
  ).run;
 
 =head1 Description

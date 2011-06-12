@@ -1,5 +1,6 @@
 use v6;
 use Net::IRC::DefaultHandlers;
+use Net::IRC::Parser;
 use Net::IRC::Event;
 
 class Net::IRC::Bot {
@@ -70,35 +71,6 @@ class Net::IRC::Bot {
 		}
 	}
 
-	grammar RawEvent {
-		token TOP {
-			^ 
-			[':' [<user>|<server=host>] <.space> || <?>] 
-			<command> 
-			[ <.space>+ [':'$<params>=(.*)$ || $<params>=<-space>+] ]* 
-			$
-		}
-
-		token user {
-			$<nick>=<-[:!]>+ '!' $<ident>=<-[@]>+ '@' <host>
-		}
-
-		token host {
-			#[ <-space - [. $ @ !]>+ ] ** '.'
-			
-			#Due to some IRC servers/services allowing anything as a host format,
-			#I've decided to define a 'host' as 'anything but a space'. Bah.
-			<-space>+
-		}
-
-		token command {
-			<.alpha>+ | \d\d\d
-		}
-
-		token params {
-			[ ':'.*$ | <-space>+ ]
-		}
-	}
 
 	method run() {					
 		self!disconnect;
