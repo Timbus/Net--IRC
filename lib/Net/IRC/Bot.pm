@@ -26,13 +26,14 @@ class Net::IRC::Bot {
 	has $debug = False;
 
 	#State variables.
+	#TODO: Make this an object for cleaner syntax.
 	has %state;
 
 	submethod BUILD {
 		callsame;
 		@modules.push(Net::IRC::DefaultHandlers.new);
 	}
-
+	
 	method !resetstate() {
 		%state = (
 			nick         => $nick,

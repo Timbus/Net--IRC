@@ -16,7 +16,7 @@ Elegant. Simple. Probably compiles.
  
  #Roles can let you break up large event handler modules into smaller ones.
  role ExtraAnnoying {
- 	had %enemies = ('bob', 'sam', 'chanserv') X=> 1;
+     has %enemies = ('bob', 'sam', 'chanserv') X=> 1;
      #Magical type constraints only let this event be called when $e.who is an enemy
      multi method said ($e where {.who<nick> ~~ %enemies}) {
          $e.reply($e.msg); #Parrot back what was said;
