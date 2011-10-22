@@ -53,6 +53,7 @@ class Net::IRC::Bot {
 			but role { 
 				method sendln(Str $string){self.send($string~"\c13\c10")}
 			};
+		say 'conn made';
 
 		#Send PASS if needed
 		$conn.sendln("PASS $password") if $password;
@@ -62,6 +63,7 @@ class Net::IRC::Bot {
 		#USER Parameters: 	<username> <hostname> <servername> <realname>
 		$conn.sendln("NICK $nick");
 		$conn.sendln("USER $username abc.xyz.net $server :$realname");
+		say 'sent thing to srvr';
 		%state<connected> = True;
 	}
 
@@ -81,7 +83,7 @@ class Net::IRC::Bot {
 			my $line = $conn.get
 				or die "Connection error.";
 
-			my $event = RawEvent.parse($line)
+			my $event = Net::IRC::Parser::RawEvent.parse($line)
 				or $*ERR.say("Could not parse the following IRC event: $line") and next;
 
 			say ~$event if $debug;
@@ -89,11 +91,14 @@ class Net::IRC::Bot {
 		}
 	}
 
-	multi method !dispatch($raw) {
+	method !dispatch($raw) {
 		#Make an event object and fill it as much as we can.
 		#XXX: Should I just use a single cached Event to save memory?
 		my $who = ($raw<user> || $raw<server>);
 		$who does role { method Str { self<nick> || self<host> } };
+		
+		#XXX Stupid workaround.
+		my $l = $raw<params>.elems;
 		
 		my $event = Net::IRC::Event.new(
 			:raw($raw),
@@ -102,7 +107,7 @@ class Net::IRC::Bot {
 			:state(%state),
 			:who($who),
 			:where(~$raw<params>[0]),
-			:what(~$raw<params>[*-1]),
+			:what(~$raw<params>[$l ?? $l-1 !! 0]),
 		);
 
 

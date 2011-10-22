@@ -25,7 +25,7 @@ class Net::IRC::Event {
 				#Break up the line using a nearby space if possible.
 				my $index = $line.rindex(" ", $maxlen) || $maxlen;
 				$.conn.sendln($prepend~$line.substr(0, $index));
-				$line := $line.substr($index+1); 
+				$line = $line.substr($index+1); 
 			}
 			$.conn.sendln($prepend~$line); 
 		}

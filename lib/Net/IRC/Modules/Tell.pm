@@ -1,5 +1,5 @@
 use v6;
-class Tell {
+class Net::IRC::Modules::Tell {
 	class Message {
 		has $.sender;
 		has $.message;
@@ -65,7 +65,7 @@ class Tell {
 						$hours ?? (", $hours hour" ~
 						($hours != 1 ?? 's' !! '') ) !! '';
 			} 
-			dafault {
+			default {
 				my $days = ($elapsed / 60 / 60 / 24).round;
 				return "$days day"~($days != 1 ?? 's' !! '');
 			}

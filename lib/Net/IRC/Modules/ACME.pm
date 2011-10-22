@@ -1,7 +1,7 @@
 use v6;
-module Modules::ACME;
+module Net::IRC::Modules::ACME;
 
-class Eightball {
+class Net::IRC::Modules::ACME::Eightball {
 	my @replies = "Probably not", "Nope", "Never", "Not a chance", "Doubt it", "No", 
 	"Answer hazy.. Oh wait there it is. It's a no.", "Yes.. Haha just kidding. No.", 
 	"No.", "Aww hell naw";
@@ -11,7 +11,7 @@ class Eightball {
 	}
 }
 
-class Unsmith {
+class Net::IRC::Modules::ACME::Unsmith {
 	has @replies = open('Net/IRC/Modules/unsmith').lines;
 	my regex sad {
 		[ ^|\s ]
