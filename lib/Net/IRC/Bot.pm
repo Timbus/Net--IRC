@@ -9,36 +9,35 @@ class Net::IRC::Bot {
 	#Set some sensible defaults for the bot.
 	#These are not stored as state, they are just used for the bot's "start state"
 	#Changing things like $nick and @channels are tracked in %state
-	has $nick     = "Rakudobot";
-	has @altnicks = $nick X~ ("_","__",^10);
-	has $username = "Clunky";
-	has $realname = '$@%# yeah, perl 6!';
+	has $.nick     = "Rakudobot";
+	has @.altnicks = $!nick X~ ("_","__",^10);
+	has $.username = "Clunky";
+	has $.realname = '$@%# yeah, perl 6!';
 
-	has $server   = "irc.perl.org";
-	has $port     = 6667;
-	has $password;
+	has $.server   = "irc.perl.org";
+	has $.port     = 6667;
+	has $.password;
 	
-	has @channels = [];
+	has @.channels = [];
 	
 	#Most important part of the bot.
-	has @modules;
+	has @.modules;
 	#Options
-	has $debug = False;
+	has $.debug = False;
 
 	#State variables.
 	#TODO: Make this an object for cleaner syntax.
-	has %state;
+	has %state is rw;
 
-	submethod BUILD {
-		callsame;
-		@modules.push(Net::IRC::DefaultHandlers.new);
-	}
+	#submethod BUILD {
+	#	@!modules.push(Net::IRC::DefaultHandlers.new);
+	#}
 	
 	method !resetstate() {
 		%state = (
-			nick         => $nick,
-			altnicks     => @altnicks,
-			autojoin     => @channels,
+			nick         => $.nick,
+			altnicks     => @.altnicks,
+			autojoin     => @.channels,
 			channels     => %(),
 			loggedin     => False,
 			connected    => False,
@@ -48,22 +47,20 @@ class Net::IRC::Bot {
 	method !connect(){
 		#Establish connection to server
 		self!resetstate;
-		say "Connecting to $server on port $port";
-		$conn = IO::Socket::INET.new(host => $server, port => $port)
+		say "Connecting to $.server on port $.port";
+		$conn = IO::Socket::INET.new(host => $.server, port => $.port)
 			but role { 
 				method sendln(Str $string){self.send($string~"\c13\c10")}
 			};
-		say 'conn made';
 
 		#Send PASS if needed
-		$conn.sendln("PASS $password") if $password;
+		$conn.sendln("PASS $.password") if $.password;
 
 		#Send NICK & USER.
 		#If the nick collides, we'll resend a new one when we recieve the error later.
 		#USER Parameters: 	<username> <hostname> <servername> <realname>
-		$conn.sendln("NICK $nick");
-		$conn.sendln("USER $username abc.xyz.net $server :$realname");
-		say 'sent thing to srvr';
+		$conn.sendln("NICK $.nick");
+		$conn.sendln("USER $.username abc.xyz.net $.server :$.realname");
 		%state<connected> = True;
 	}
 
@@ -86,7 +83,7 @@ class Net::IRC::Bot {
 			my $event = Net::IRC::Parser::RawEvent.parse($line)
 				or $*ERR.say("Could not parse the following IRC event: $line") and next;
 
-			say ~$event if $debug;
+			say ~$event if $.debug;
 			self!dispatch($event);
 		}
 	}
@@ -94,8 +91,8 @@ class Net::IRC::Bot {
 	method !dispatch($raw) {
 		#Make an event object and fill it as much as we can.
 		#XXX: Should I just use a single cached Event to save memory?
-		my $who = ($raw<user> || $raw<server>);
-		$who does role { method Str { self<nick> || self<host> } };
+		my $who = ($raw<user> || $raw<server> || "");
+		$who does role { method Str { self<nick>.Str || self<host>.Str } }
 		
 		#XXX Stupid workaround.
 		my $l = $raw<params>.elems;
@@ -112,48 +109,48 @@ class Net::IRC::Bot {
 
 
 		# Dispatch to the raw event handlers.
-		@modules>>.*"irc_{ lc $event.command }"($event);
+		@.modules>>.*"irc_{ lc $event.command }"($event);
 		given uc $event.command {
 			when "PRIVMSG" {
 				#Check to see if its a CTCP request.
 				if $event.what ~~ /^\c01 (.*) \c01$/ {
 					my $text = ~$0;
-					if $debug {
+					if $.debug {
 						say "Received CTCP $text from {$event.who}" ~
 						( $event.where eq $event.who ?? '.' !! " (to channel {$event.where})." );
 					}
 
 					$text ~~ /^ (.+?) [<.ws> (.*)]? $/;
 					$event.what = $1 && ~$1;
-					@modules>>.*"ctcp_{ lc $0 }"($event);
+					@.modules>>.*"ctcp_{ lc $0 }"($event);
 					#If its a CTCP ACTION then we also call 'emoted'
-					@modules>>.*emoted($event) if uc $0 eq 'ACTION';		
+					@.modules>>.*emoted($event) if uc $0 eq 'ACTION';		
 				}
 				else {
-					@modules>>.*said($event);
+					@.modules>>.*said($event);
 				}
 			}
 
 			when "NOTICE" {
-				@modules>>.*noticed($event);
+				@.modules>>.*noticed($event);
 			}
 
 			when "KICK" {
 				$event.what = $raw<params>[1];
-				@modules>>.*kicked($event);
+				@.modules>>.*kicked($event);
 			}
 
 			when "JOIN" {
-				@modules>>.*joined($event);
+				@.modules>>.*joined($event);
 			}
 
 			when "NICK" {
-				@modules>>.*nickchange($event);
+				@.modules>>.*nickchange($event);
 			}
 
 			when "376"|"422" {
 				#End of motd / no motd. (Usually) The last thing a server sends the client on connect.
-				@modules>>.*connected($event)
+				@.modules>>.*connected($event)
 			}
 		}
 	}

@@ -26,8 +26,9 @@ class Net::IRC::Modules::Tell {
 		self!deliver-message($ev)
 	}
 	
-	multi method joined ( $ev where {$ev.who.lc ~~ %messages} ) {
-		self!deliver-message($ev)
+	multi method joined ( $ev ) {#where {$ev.who.lc ~~ %messages} ) {
+		say 'okay I joined';
+		#self!deliver-message($ev)
 	}
 	
 	multi method nickchange ( $ev where {$ev.what.lc ~~ %messages} ) {

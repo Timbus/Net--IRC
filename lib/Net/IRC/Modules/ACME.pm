@@ -18,7 +18,7 @@ class Net::IRC::Modules::ACME::Unsmith {
 		[ [ [':'|'='] <[\<\(\[]> ] | [ 'un'?'smith' ] | 'sad''face'? ]
 		[ $|\s ]
 	}
-	multi method said ( $ev where {.what ~~ &sad} ) {
+	multi method said ( $ev where {.what ~~ /<.sad>/} ) {
 		$ev.msg(@replies.pick);
 	}
 }

@@ -29,7 +29,11 @@ Elegant. Simple. Probably compiles.
  	server   => 'irc.freenode.net',
  	channels => <#bottest>,
  	
- 	modules  => (AnnoyUsers.new(), Autoident.new(password => 'nspassw0rd')),
+ 	modules  => (
+ 		Net::IRC::DefaultHandlers.new(),
+ 		AnnoyUsers.new(), 
+ 		Autoident.new(password => 'nspassw0rd')
+ 	),
  ).run;
 
 =head1 Description
