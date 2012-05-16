@@ -127,7 +127,13 @@ class Net::IRC::Bot {
 					@.modules>>.*emoted($event) if uc $0 eq 'ACTION';		
 				}
 				else {
-					@.modules>>.*said($event);
+					for @.modules -> $m {
+						say $event.WHAT;
+						try $m.said($event);
+						if $! && $!.message !~~ /'none of these signatures match'/ {
+							die $!;
+						}
+					}
 				}
 			}
 
