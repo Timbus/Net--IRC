@@ -123,43 +123,45 @@ class Net::IRC::Bot {
 
 					$text ~~ /^ (.+?) [<.ws> (.*)]? $/;
 					$event.what = $1 && ~$1;
-					@.modules>>.*"ctcp_{ lc $0 }"($event);
+                    self.do_dispatch("ctcp_{ lc $0 }", $event);
 					#If its a CTCP ACTION then we also call 'emoted'
-					@.modules>>.*emoted($event) if uc $0 eq 'ACTION';		
+					self.do_dispatch("emoted", $event) if uc $0 eq 'ACTION';		
 				}
 				else {
-					for @.modules -> $m {
-						say $event.WHAT;
-						try $m.said($event);
-						if $! && $!.message !~~ /'none of these signatures match'/ {
-							die $!;
-						}
-					}
+					self.do_dispatch("said", $event);
 				}
 			}
 
 			when "NOTICE" {
-				@.modules>>.*noticed($event);
+				self.do_dispatch("noticed", $event);
 			}
 
 			when "KICK" {
 				$event.what = $raw<params>[1];
-				@.modules>>.*kicked($event);
+                self.do_dispatch("kicked", $event);
 			}
 
 			when "JOIN" {
-				@.modules>>.*joined($event);
+				self.do_dispatch("joined", $event);
 			}
 
 			when "NICK" {
-				@.modules>>.*nickchange($event);
+				self.do_dispatch("nickchange", $event);
 			}
 
 			when "376"|"422" {
 				#End of motd / no motd. (Usually) The last thing a server sends the client on connect.
-				@.modules>>.*connected($event)
+				self.do_dispatch("connected", $event);
 			}
 		}
 	}
+    
+    method do_dispatch($method, $event) {
+        for @.modules -> $mod {
+            if $mod.^find_method($method) -> $multi {
+                $multi.candidates_matching($mod, $event)>>.($mod, $event);
+            }
+        }
+    }
 }
 
