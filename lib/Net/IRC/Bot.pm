@@ -29,9 +29,11 @@ class Net::IRC::Bot {
 	#TODO: Make this an object for cleaner syntax.
 	has %state is rw;
 
-	#submethod BUILD {
-	#	@!modules.push(Net::IRC::DefaultHandlers.new);
-	#}
+    method new(|$) {
+        my $obj = callsame();
+        $obj.modules.push(Net::IRC::DefaultHandlers.new);
+        $obj
+    }
 	
 	method !resetstate() {
 		%state = (
@@ -106,7 +108,6 @@ class Net::IRC::Bot {
 			:where(~$raw<params>[0]),
 			:what(~$raw<params>[$l ?? $l-1 !! 0]),
 		);
-
 
 		# Dispatch to the raw event handlers.
 		@.modules>>.*"irc_{ lc $event.command }"($event);
