@@ -5,11 +5,12 @@ use Net::IRC::Modules::ACME;
 use Net::IRC::Modules::Autoident;
 
 Net::IRC::Bot.new(
-	nick       => 'Unicron',
+	nick       => 'nyhymrg',
 	server     => 'irc.freenode.org',
 	channels   => <#bottest>,
 	modules    => ( 
 		Net::IRC::Modules::ACME::Eightball.new, 
-		Net::IRC::Modules::ACME::Unsmith.new 
+		#Net::IRC::Modules::ACME::Unsmith.new 
 	),
+	debug      => True,
 ).run;
