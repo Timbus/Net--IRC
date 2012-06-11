@@ -1,5 +1,5 @@
 use v6;
-use Net::IRC::DefaultHandlers;
+use Net::IRC::Handlers::Default;
 use Net::IRC::Parser;
 use Net::IRC::Event;
 
@@ -77,6 +77,10 @@ class Net::IRC::Bot {
     method run() {					
         self!disconnect;
         self!connect;
+
+        unless @.modules {
+            @.modules = (Net::IRC::Handlers::Default.new()),
+        }
         loop {
             #XXX: Support for timed events?
             my $line = $conn.get
