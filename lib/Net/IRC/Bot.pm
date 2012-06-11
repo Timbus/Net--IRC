@@ -45,25 +45,26 @@ class Net::IRC::Bot {
     }
 
     method !connect(){
-            #Establish connection to server
-            self!resetstate;
-            say "Connecting to $.server on port $.port";
-            $conn = IO::Socket::INET.new(host => $.server, port => $.port)
-                    but role { 
-                            method sendln(Str $string) {
-                                self.send($string~"\c13\c10")
-                            }
-                    };
+        #Establish connection to server
+        self!resetstate;
+        say "Connecting to $.server on port $.port";
+        $conn = IO::Socket::INET.new(host => $.server, port => $.port)
+                but role { 
+                        method sendln(Str $string) {
+                            self.send($string~"\c13\c10")
+                        }
+                };
 
-            #Send PASS if needed
-            $conn.sendln("PASS $.password") if $.password;
+        # Send PASS if needed
+        $conn.sendln("PASS $.password") if $.password;
 
-            #Send NICK & USER.
-            #If the nick collides, we'll resend a new one when we recieve the error later.
-            #USER Parameters: 	<username> <hostname> <servername> <realname>
-            $conn.sendln("NICK $.nick");
-            $conn.sendln("USER $.username abc.xyz.net $.server :$.realname");
-            %state<connected> = True;
+        # Send NICK & USER.
+        # If the nick collides, we'll resend a new one when we recieve 
+        # the error later.
+        # USER Parameters: 	<username> <hostname> <servername> <realname>
+        $conn.sendln("NICK $.nick");
+        $conn.sendln("USER $.username abc.xyz.net $.server :$.realname");
+        %state<connected> = True;
     }
 
     method !disconnect($quitmsg = "Leaving") {
@@ -72,7 +73,6 @@ class Net::IRC::Bot {
             $conn.close;
         }
     }
-
 
     method run() {					
         self!disconnect;
