@@ -13,12 +13,19 @@ class Net::IRC::Modules::ACME::Eightball {
 
 class Net::IRC::Modules::ACME::Unsmith {
 	has @replies = open('Net/IRC/Modules/unsmith').lines;
-	my regex sad {
-		[ ^|\s ]
-		[ [ [':'|'='] <[\<\(\[]> ] | [ 'un'?'smith' ] | 'sad''face'? ]
-		[ $|\s ]
-	}
-	multi method said ( $ev where {.what ~~ /<.sad>/} ) {
+# XXX: Can't use this. Seems to be some kind of rakudo bug.
+#	my regex sad {
+#		[ ^|\s ]
+#		[ [ [':'|'='] <[\<\(\[]> ] | [ 'un'?'smith' ] | 'sad''face'? ]
+#		[ $|\s ]
+#	}
+	multi method said ( $ev where { 
+		.what ~~ m/
+			[ ^|\s ]
+			[ [ [':'|'='] <[\<\(\[]> ] | [ 'un'?'smith' ] | 'sad''face'? ]
+			[ $|\s ] 
+		/}) {
+		
 		$ev.msg(@replies.pick);
 	}
 }
