@@ -6,14 +6,7 @@ Elegant. Simple. Probably compiles.
 
  use Net::IRC::Bot;
  use Net::IRC::Modules::Autoident;
- 
- class AnnoyUsers does ExtraAnnoying {
-     #Will be called when the bot gets a join event
-     multi method joined ($e) {
-          $e.reply("Hi there, {$e.who<nick>}!"); 
-     }
- }
- 
+
  #Roles can let you break up large event handler modules into smaller ones.
  role ExtraAnnoying {
      has %enemies = ('bob', 'sam', 'chanserv') X=> 1;
@@ -23,6 +16,14 @@ Elegant. Simple. Probably compiles.
      }
  }
  
+
+ class AnnoyUsers does ExtraAnnoying {
+     #Will be called when the bot gets a join event
+     multi method joined ($e) {
+          $e.reply("Hi there, {$e.who<nick>}!"); 
+     }
+ }
+
  
  Net::IRC::Bot.new(
  	nick     => 'KickMe',

@@ -1,6 +1,6 @@
 use v6;
 
-class Net::IRC::DefaultHandlers {
+class Net::IRC::Handlers::Default {
     ##Some default handler methods
 
 	#Error handler
@@ -95,4 +95,6 @@ class Net::IRC::DefaultHandlers {
 		$ev.send_ctcp("VERSION Perl6bot 0.001a Probably *nix");
 	}
 }
+
+# vim: ft=perl6 sw=4 expandtab
 

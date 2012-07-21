@@ -1,5 +1,5 @@
 use v6;
-use Net::IRC::DefaultHandlers;
+use Net::IRC::Handlers::Default;
 use Net::IRC::Parser;
 use Net::IRC::Event;
 
@@ -31,7 +31,7 @@ class Net::IRC::Bot {
 
     method new(|$) {
         my $obj = callsame();
-        $obj.modules.push(Net::IRC::DefaultHandlers.new);
+        $obj.modules.push(Net::IRC::Handlers::Default.new);
         $obj
     }
 	
@@ -109,6 +109,7 @@ class Net::IRC::Bot {
 			:what(~$raw<params>[$l ?? $l-1 !! 0]),
 		);
 
+
 		# Dispatch to the raw event handlers.
 		@.modules>>.*"irc_{ lc $event.command }"($event);
 		given uc $event.command {
@@ -165,3 +166,4 @@ class Net::IRC::Bot {
     }
 }
 
+# vim: ft=perl6 sw=4 expandtab
