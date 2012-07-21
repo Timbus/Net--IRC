@@ -29,11 +29,11 @@ class Net::IRC::Bot {
 	#TODO: Make this an object for cleaner syntax.
 	has %state is rw;
 
-    method new(|$) {
-        my $obj = callsame();
-        $obj.modules.push(Net::IRC::Handlers::Default.new);
-        $obj
-    }
+	method new(|$) {
+		my $obj = callsame();
+		$obj.modules.push(Net::IRC::Handlers::Default.new);
+		$obj
+	}
 	
 	method !resetstate() {
 		%state = (
@@ -124,7 +124,7 @@ class Net::IRC::Bot {
 
 					$text ~~ /^ (.+?) [<.ws> (.*)]? $/;
 					$event.what = $1 && ~$1;
-                    self.do_dispatch("ctcp_{ lc $0 }", $event);
+					self.do_dispatch("ctcp_{ lc $0 }", $event);
 					#If its a CTCP ACTION then we also call 'emoted'
 					self.do_dispatch("emoted", $event) if uc $0 eq 'ACTION';		
 				}
@@ -139,7 +139,7 @@ class Net::IRC::Bot {
 
 			when "KICK" {
 				$event.what = $raw<params>[1];
-                self.do_dispatch("kicked", $event);
+				self.do_dispatch("kicked", $event);
 			}
 
 			when "JOIN" {
@@ -156,14 +156,14 @@ class Net::IRC::Bot {
 			}
 		}
 	}
-    
-    method do_dispatch($method, $event) {
-        for @.modules -> $mod {
-            if $mod.^find_method($method) -> $multi {
-                $multi.candidates_matching($mod, $event)>>.($mod, $event);
-            }
-        }
-    }
+	
+	method do_dispatch($method, $event) {
+		for @.modules -> $mod {
+			if $mod.^find_method($method) -> $multi {
+				$multi.candidates_matching($mod, $event)>>.($mod, $event);
+			}
+		}
+	}
 }
 
 # vim: ft=perl6 sw=4 expandtab

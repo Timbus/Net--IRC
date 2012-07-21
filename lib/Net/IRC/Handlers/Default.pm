@@ -1,7 +1,7 @@
 use v6;
 
 class Net::IRC::Handlers::Default {
-    ##Some default handler methods
+	##Some default handler methods
 
 	#Error handler
 	multi method irc_error($ev) {
