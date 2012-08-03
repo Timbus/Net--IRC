@@ -20,9 +20,9 @@ class Net::IRC::Event {
 		#I'm going with 480, as 510 seems to get cut off on some servers.
 
 		my $prepend = "PRIVMSG $to :";
-		my $maxlen = 480-$prepend.bytes;
+		my $maxlen = 480-$prepend.encode.bytes;
 		for $text.split(/\c13?\c10/) -> $line is rw {
-			while $line.bytes > $maxlen {
+			while $line.encode.bytes > $maxlen {
 				#Break up the line using a nearby space if possible.
 				my $index = $line.rindex(" ", $maxlen) || $maxlen;
 				$.conn.sendln($prepend~$line.substr(0, $index));
