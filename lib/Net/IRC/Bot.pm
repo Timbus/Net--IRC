@@ -1,4 +1,5 @@
 use v6;
+use MuEvent;
 use Net::IRC::Handlers::Default;
 use Net::IRC::Parser;
 use Net::IRC::Event;
@@ -32,6 +33,13 @@ class Net::IRC::Bot {
 	method new(|$) {
 		my $obj = callsame();
 		$obj.modules.push(Net::IRC::Handlers::Default.new);
+		$obj.connect;
+		MuEvent::socket (
+			socket => $obj.conn,
+			poll   => 'r',
+			cb     => { $obj.run() },
+		);
+		
 		$obj
 	}
 	
@@ -46,7 +54,7 @@ class Net::IRC::Bot {
 		)
 	}
 
-	method !connect(){
+	method connect(){
 		#Establish connection to server
 		self!resetstate;
 		say "Connecting to $.server on port $.port";
@@ -66,28 +74,22 @@ class Net::IRC::Bot {
 		%state<connected> = True;
 	}
 
-	method !disconnect($quitmsg = "Leaving"){
+	method disconnect($quitmsg = "Leaving"){
 		if %state<connected> {
 			$conn.sendln("QUIT :$quitmsg");
 			$conn.close;
 		}
 	}
 
+	method run() {
+		my $line = $conn.get
+			or die "Connection error.";
 
-	method run() {					
-		self!disconnect;
-		self!connect;
-		loop {
-			#XXX: Support for timed events?
-			my $line = $conn.get
-				or die "Connection error.";
+		my $event = Net::IRC::Parser::RawEvent.parse($line)
+			or $*ERR.say("Could not parse the following IRC event: $line") and next;
 
-			my $event = Net::IRC::Parser::RawEvent.parse($line)
-				or $*ERR.say("Could not parse the following IRC event: $line") and next;
-
-			say ~$event if $.debug;
-			self!dispatch($event);
-		}
+		say ~$event if $.debug;
+		self!dispatch($event);
 	}
 
 	method !dispatch($raw) {
@@ -166,4 +168,4 @@ class Net::IRC::Bot {
 	}
 }
 
-# vim: ft=perl6 sw=4 expandtab
+# vim: ft=perl6 sw=4 ts=4 et=0
