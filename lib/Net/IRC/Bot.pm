@@ -5,7 +5,7 @@ use Net::IRC::Parser;
 use Net::IRC::Event;
 
 class Net::IRC::Bot {
-	has $conn is rw;
+	has $.conn is rw;
 
 	#Set some sensible defaults for the bot.
 	#These are not stored as state, they are just used for the bot's "start state"
@@ -34,10 +34,11 @@ class Net::IRC::Bot {
 		my $obj = callsame();
 		$obj.modules.push(Net::IRC::Handlers::Default.new);
 		$obj.connect;
-		MuEvent::socket (
-			socket => $obj.conn,
-			poll   => 'r',
-			cb     => { $obj.run() },
+
+		MuEvent::socket(
+			cb     => { $obj.run(); }, 
+			socket => $obj.conn, 
+			poll   => 'r'
 		);
 		
 		$obj
@@ -58,31 +59,31 @@ class Net::IRC::Bot {
 		#Establish connection to server
 		self!resetstate;
 		say "Connecting to $.server on port $.port";
-		$conn = IO::Socket::INET.new(host => $.server, port => $.port)
+		$.conn = IO::Socket::INET.new(host => $.server, port => $.port)
 			but role { 
 				method sendln(Str $string){self.send($string~"\c13\c10")}
 			};
 
 		#Send PASS if needed
-		$conn.sendln("PASS $.password") if $.password;
+		$.conn.sendln("PASS $.password") if $.password;
 
 		#Send NICK & USER.
 		#If the nick collides, we'll resend a new one when we recieve the error later.
 		#USER Parameters: 	<username> <hostname> <servername> <realname>
-		$conn.sendln("NICK $.nick");
-		$conn.sendln("USER $.username abc.xyz.net $.server :$.realname");
+		$.conn.sendln("NICK $.nick");
+		$.conn.sendln("USER $.username abc.xyz.net $.server :$.realname");
 		%state<connected> = True;
 	}
 
 	method disconnect($quitmsg = "Leaving"){
 		if %state<connected> {
-			$conn.sendln("QUIT :$quitmsg");
-			$conn.close;
+			$.conn.sendln("QUIT :$quitmsg");
+			$.conn.close;
 		}
 	}
 
 	method run() {
-		my $line = $conn.get
+		my $line = $.conn.get
 			or die "Connection error.";
 
 		my $event = Net::IRC::Parser::RawEvent.parse($line)
@@ -90,6 +91,8 @@ class Net::IRC::Bot {
 
 		say ~$event if $.debug;
 		self!dispatch($event);
+		
+		return 1;
 	}
 
 	method !dispatch($raw) {
@@ -104,7 +107,7 @@ class Net::IRC::Bot {
 		my $event = Net::IRC::Event.new(
 			:raw($raw),
 			:command(~$raw<command>),
-			:conn($conn),
+			:conn($.conn),
 			:state(%state),
 			:who($who),
 			:where(~$raw<params>[0]),
