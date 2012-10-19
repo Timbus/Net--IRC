@@ -29,7 +29,7 @@ class Net::IRC::Bot {
 	#TODO: Make this an object for cleaner syntax.
 	has %state is rw;
 
-	method new(|$) {
+	method new(|) {
 		my $obj = callsame();
 		$obj.modules.push(Net::IRC::Handlers::Default.new);
 		$obj
@@ -79,7 +79,7 @@ class Net::IRC::Bot {
 		self!connect;
 		loop {
 			#XXX: Support for timed events?
-			my $line = $conn.get
+			my $line = $conn.get.encode('utf-8').decode('utf8')
 				or die "Connection error.";
 
 			my $event = Net::IRC::Parser::RawEvent.parse($line)
