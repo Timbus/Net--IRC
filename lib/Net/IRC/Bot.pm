@@ -17,9 +17,9 @@ class Net::IRC::Bot {
 	has $.server   = "irc.perl.org";
 	has $.port     = 6667;
 	has $.password;
-	
+
 	has @.channels = [];
-	
+
 	#Most important part of the bot.
 	has @.modules;
 	#Options
@@ -34,7 +34,7 @@ class Net::IRC::Bot {
 		$obj.modules.push(Net::IRC::Handlers::Default.new);
 		$obj
 	}
-	
+
 	method !resetstate() {
 		%state = (
 			nick         => $.nick,
@@ -51,7 +51,7 @@ class Net::IRC::Bot {
 		self!resetstate;
 		say "Connecting to $.server on port $.port";
 		$conn = IO::Socket::INET.new(host => $.server, port => $.port)
-			but role { 
+			but role {
 				method sendln(Str $string){self.send($string~"\c13\c10")}
 			};
 
@@ -74,7 +74,7 @@ class Net::IRC::Bot {
 	}
 
 
-	method run() {					
+	method run() {
 		self!disconnect;
 		self!connect;
 		loop {
@@ -95,10 +95,10 @@ class Net::IRC::Bot {
 		#XXX: Should I just use a single cached Event to save memory?
 		my $who = ($raw<user> || $raw<server> || "");
 		$who does role { method Str { self<nick>.Str || self<host>.Str } }
-		
+
 		#XXX Stupid workaround.
 		my $l = $raw<params>.elems;
-		
+
 		my $event = Net::IRC::Event.new(
 			:raw($raw),
 			:command(~$raw<command>),
@@ -126,7 +126,7 @@ class Net::IRC::Bot {
 					$event.what = $1 && ~$1;
 					self.do_dispatch("ctcp_{ lc $0 }", $event);
 					#If its a CTCP ACTION then we also call 'emoted'
-					self.do_dispatch("emoted", $event) if uc $0 eq 'ACTION';		
+					self.do_dispatch("emoted", $event) if uc $0 eq 'ACTION';
 				}
 				else {
 					self.do_dispatch("said", $event);
@@ -156,14 +156,12 @@ class Net::IRC::Bot {
 			}
 		}
 	}
-	
+
 	method do_dispatch($method, $event) {
 		for @.modules -> $mod {
 			if $mod.^find_method($method) -> $multi {
-				$multi.candidates_matching($mod, $event)>>.($mod, $event);
+				$multi.cando(Capture.new(list => [$mod, $event]))>>.($mod, $event);
 			}
 		}
 	}
 }
-
-# vim: ft=perl6 sw=4 expandtab
