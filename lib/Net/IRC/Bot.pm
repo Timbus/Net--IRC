@@ -79,11 +79,12 @@ class Net::IRC::Bot {
 		self!connect;
 		loop {
 			#XXX: Support for timed events?
-			my $line = $conn.get.encode('utf-8').decode('utf8')
+			my $line = $conn.get
 				or die "Connection error.";
+			$line ~~ s/<[\n\r]>+$//;
 
 			my $event = Net::IRC::Parser::RawEvent.parse($line)
-				or $*ERR.say("Could not parse the following IRC event: $line") and next;
+				or $*ERR.say("Could not parse the following IRC event: $line.perl()") and next;
 
 			say ~$event if $.debug;
 			self!dispatch($event);
@@ -94,7 +95,7 @@ class Net::IRC::Bot {
 		#Make an event object and fill it as much as we can.
 		#XXX: Should I just use a single cached Event to save memory?
 		my $who = ($raw<user> || $raw<server> || "");
-		$who does role { method Str { self<nick>.Str || self<host>.Str } }
+		$who does role { method Str { (self<nick> // self<host> ).Str } }
 
 		#XXX Stupid workaround.
 		my $l = $raw<params>.elems;
