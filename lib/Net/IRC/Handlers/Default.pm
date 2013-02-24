@@ -36,7 +36,7 @@ class Net::IRC::Handlers::Default {
 
 	#Autojoin method. Handy.
 	multi method connected($ev) {
-		$ev.conn.sendln("JOIN $_") for $ev.state<autojoin>;
+		$ev.conn.sendln("JOIN $_") for $ev.state<autojoin>.list;
 	}
 
 
