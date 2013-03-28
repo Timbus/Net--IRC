@@ -73,3 +73,6 @@ class Net::IRC::Modules::Tell {
 		}
 	}
 }
+
+# vim: ft=perl6 tabstop=4 shiftwidth=4
+

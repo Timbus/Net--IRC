@@ -37,7 +37,7 @@ class Net::IRC::Handlers::Default {
 	#Autojoin method. Handy.
 	multi method connected($ev) {
 		$ev.conn.sendln("JOIN $_") for $ev.state<autojoin>.list;
-        1;
+		1;
 	}
 
 
@@ -97,5 +97,5 @@ class Net::IRC::Handlers::Default {
 	}
 }
 
-# vim: ft=perl6 sw=4 expandtab
+# vim: ft=perl6 tabstop=4 shiftwidth=4
 

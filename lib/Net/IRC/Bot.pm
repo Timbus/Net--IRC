@@ -166,3 +166,6 @@ class Net::IRC::Bot {
 		}
 	}
 }
+
+# vim: ft=perl6 tabstop=4 shiftwidth=4
+

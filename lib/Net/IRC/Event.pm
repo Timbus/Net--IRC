@@ -45,15 +45,15 @@ class Net::IRC::Event {
 		$.what ?? ~$.what !! $.raw;
 	}
 
-    multi method gist(Net::IRC::Event:D:) {
-        join "\n",
-            "Event($.command)",
-            ("    where: $.where" if $.where),
-            ("     what: $.what"  if $.what),
-            ("      who: $.who"   if $.who),
-             "      raw: $.raw",
-             ;
-    }
+	multi method gist(Net::IRC::Event:D:) {
+		join "\n",
+			"Event($.command)",
+			("    where: $.where" if $.where),
+			("     what: $.what"  if $.what),
+			("      who: $.who"   if $.who),
+			 "      raw: $.raw",
+			;
+	}
 }
 
-# vim: ft=perl6 expandtab sw=4
+# vim: ft=perl6 tabstop=4 shiftwidth=4

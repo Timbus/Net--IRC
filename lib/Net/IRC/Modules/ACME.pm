@@ -29,3 +29,6 @@ class Net::IRC::Modules::ACME::Unsmith {
 		$ev.msg(@replies.pick);
 	}
 }
+
+# vim: ft=perl6 tabstop=4 shiftwidth=4
+

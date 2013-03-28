@@ -8,3 +8,6 @@ class Net::IRC::Modules::Autoident {
 		$ev.conn.sendln("NS IDENTIFY $.password");
 	}
 }
+
+# vim: ft=perl6 tabstop=4 shiftwidth=4
+
