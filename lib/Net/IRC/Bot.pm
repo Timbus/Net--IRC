@@ -50,13 +50,23 @@ class Net::IRC::Bot {
 		#Establish connection to server
 		self!resetstate;
 		say "Connecting to $.server on port $.port";
+		my role irc-connection[$debug] {
+			method sendln(Str $string, :$scrubbed = $string){
+				say "»»» $scrubbed" if $debug;
+				self.send($string~"\c13\c10");
+			}
+			method get(|){
+				my $line = callsame();
+				say "<-- $line" if $debug;
+				$line;
+			}
+		}
 		$.conn = IO::Socket::INET.new(host => $.server, port => $.port)
-			but role {
-				method sendln(Str $string){self.send($string~"\c13\c10")}
-			};
+			but irc-connection[$.debug];
 
 		#Send PASS if needed
-		$.conn.sendln("PASS $.password") if $.password;
+		$.conn.sendln("PASS $.password", scrubbed => 'PASS ...')
+			if $.password;
 
 		#Send NICK & USER.
 		#If the nick collides, we'll resend a new one when we recieve the error later.
@@ -86,7 +96,6 @@ class Net::IRC::Bot {
 			my $event = Net::IRC::Parser::RawEvent.parse($line)
 				or $*ERR.say("Could not parse the following IRC event: $line.perl()") and next;
 
-			say ~$event if $.debug;
 			self!dispatch($event);
 		}
 	}
