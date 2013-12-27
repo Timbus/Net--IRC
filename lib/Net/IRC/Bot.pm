@@ -4,11 +4,11 @@ use Net::IRC::Parser;
 use Net::IRC::Event;
 
 class Net::IRC::Bot {
-	has $conn is rw;
+	has $.conn is rw;
 
 	#Set some sensible defaults for the bot.
 	#These are not stored as state, they are just used for the bot's "start state"
-	#Changing things like $nick and @channels are tracked in %state
+	#Changing things like $nick and @channels are tracked in %.state
 	has $.nick     = "Rakudobot";
 	has @.altnicks = $!nick X~ ("_","__",^10);
 	has $.username = "Clunky";
@@ -27,7 +27,7 @@ class Net::IRC::Bot {
 
 	#State variables.
 	#TODO: Make this an object for cleaner syntax.
-	has %state is rw;
+	has %.state is rw;
 
 	method new(|) {
 		my $obj = callsame();
@@ -36,7 +36,7 @@ class Net::IRC::Bot {
 	}
 
 	method !resetstate() {
-		%state = (
+		%.state = (
 			nick         => $.nick,
 			altnicks     => @.altnicks,
 			autojoin     => @.channels,
@@ -50,26 +50,26 @@ class Net::IRC::Bot {
 		#Establish connection to server
 		self!resetstate;
 		say "Connecting to $.server on port $.port";
-		$conn = IO::Socket::INET.new(host => $.server, port => $.port)
+		$.conn = IO::Socket::INET.new(host => $.server, port => $.port)
 			but role {
 				method sendln(Str $string){self.send($string~"\c13\c10")}
 			};
 
 		#Send PASS if needed
-		$conn.sendln("PASS $.password") if $.password;
+		$.conn.sendln("PASS $.password") if $.password;
 
 		#Send NICK & USER.
 		#If the nick collides, we'll resend a new one when we recieve the error later.
 		#USER Parameters: 	<username> <hostname> <servername> <realname>
-		$conn.sendln("NICK $.nick");
-		$conn.sendln("USER $.username abc.xyz.net $.server :$.realname");
-		%state<connected> = True;
+		$.conn.sendln("NICK $.nick");
+		$.conn.sendln("USER $.username abc.xyz.net $.server :$.realname");
+		%.state<connected> = True;
 	}
 
 	method !disconnect($quitmsg = "Leaving"){
-		if %state<connected> {
-			$conn.sendln("QUIT :$quitmsg");
-			$conn.close;
+		if %.state<connected> {
+			$.conn.sendln("QUIT :$quitmsg");
+			$.conn.close;
 		}
 	}
 
@@ -79,7 +79,7 @@ class Net::IRC::Bot {
 		self!connect;
 		loop {
 			#XXX: Support for timed events?
-			my $line = $conn.get
+			my $line = $.conn.get
 				or die "Connection error.";
 			$line ~~ s/<[\n\r]>+$//;
 
@@ -103,8 +103,8 @@ class Net::IRC::Bot {
 		my $event = Net::IRC::Event.new(
 			:raw($raw),
 			:command(~$raw<command>),
-			:conn($conn),
-			:state(%state),
+			:conn($.conn),
+			:state(%.state),
 			:who($who),
 			:where(~$raw<params>[0]),
 			:what(~$raw<params>[$l ?? $l-1 !! 0]),
