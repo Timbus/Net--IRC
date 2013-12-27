@@ -9,6 +9,8 @@ Net::IRC::Bot.new(
 	server     => 'irc.freenode.org',
 	channels   => <#bottest>,
 	modules    => ( 
+		Net::IRC::Modules::ACME::Bark::LikeADog.new,
+		Net::IRC::Modules::ACME::Bark::LikeATree.new(prefix => '@'),
 		Net::IRC::Modules::ACME::Eightball.new, 
 		#Net::IRC::Modules::ACME::Unsmith.new 
 	),
