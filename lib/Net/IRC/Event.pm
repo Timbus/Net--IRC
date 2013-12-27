@@ -13,6 +13,9 @@ class Net::IRC::Event {
 	has $.what is rw;
 	has $.where is rw;
 
+	# Per-event cache to prevent many modules from repeating the same work
+	has %.cache;
+
 	
 	##Utility methods
 	method msg($text, $to = $.where) {
