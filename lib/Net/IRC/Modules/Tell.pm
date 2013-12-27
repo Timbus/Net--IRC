@@ -1,4 +1,6 @@
 use v6;
+use Net::IRC::TextUtil;
+
 class Net::IRC::Modules::Tell {
 	class Message {
 		has $.sender;
@@ -38,39 +40,10 @@ class Net::IRC::Modules::Tell {
 	method !deliver-message( $ev ){
 		my $reciever = $ev.who;
 		for @(%messages{$reciever.lc}) -> $msg {
-			my $elapsed = self!format-time(time - $msg.when);
+			my $elapsed = friendly-duration(time - $msg.when);
 			$ev.msg("$reciever: <{$msg.sender}> {$msg.message} ::$elapsed ago");
 		}
 		%messages{$reciever.lc} = [];
-	}
-	
-	method !format-time($elapsed) {
-		given $elapsed { 
-			when * < 60 { 
-				return "$elapsed second"~($elapsed != 1 ?? 's' !! '');
-			}
-			when * < 3570 {
-				my $mins = ($elapsed / 60).round;
-				return "$mins minute"~($mins != 1 ?? 's' !! '');
-			}
-			when * < 84600 {
-				my $hours = ($elapsed / 60 / 60).round;
-				return "$hours hour"~($hours != 1 ?? 's' !! '');
-			}
-			when * < 604800 {
-				my $days = ($elapsed / 60 / 60 / 24).round;
-				my $hours = ($elapsed % 86400 / 60 / 60).round;
-				return 
-					"$days day" ~
-					($days != 1 ?? 's' !! '') ~ 
-						$hours ?? (", $hours hour" ~
-						($hours != 1 ?? 's' !! '') ) !! '';
-			} 
-			default {
-				my $days = ($elapsed / 60 / 60 / 24).round;
-				return "$days day"~($days != 1 ?? 's' !! '');
-			}
-		}
 	}
 }
 
