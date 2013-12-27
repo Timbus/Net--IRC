@@ -1,4 +1,6 @@
 use v6;
+use Net::IRC::CommandHandler;
+
 module Net::IRC::Modules::ACME;
 
 class Net::IRC::Modules::ACME::Eightball {
@@ -27,6 +29,18 @@ class Net::IRC::Modules::ACME::Unsmith {
 		/}) {
 		
 		$ev.msg(@replies.pick);
+	}
+}
+
+class Net::IRC::Modules::ACME::Bark::LikeADog does Net::IRC::CommandHandler {
+	method command_bark($ev, $match) {
+		$ev.msg("Woof!");
+	}
+}
+
+class Net::IRC::Modules::ACME::Bark::LikeATree does Net::IRC::CommandHandler {
+	method command_bark($ev, $match) {
+		$ev.msg("The bark is smooth and brown.");
 	}
 }
 
