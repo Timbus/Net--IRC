@@ -18,7 +18,7 @@ class Net::IRC::Event {
 
 	
 	##Utility methods
-	method msg($text, $to = $.where) {
+	method msg($text, $to = self!default-to) {
 		##IRC RFC specifies 510 bytes as the maximum allowed to send per line. 
 		#I'm going with 480, as 510 seems to get cut off on some servers.
 
@@ -35,14 +35,17 @@ class Net::IRC::Event {
 		}
 	}
 	
-	method act($text, $to = $.where) {
+	method act($text, $to = self!default-to) {
 		$.conn.sendln("PRIVMSG $to :\c01ACTION $text\c01")
 	}
 	
-	method send_ctcp($text, $to = $.where) {
+	method send_ctcp($text, $to = self!default-to) {
 		$.conn.sendln("NOTICE $to :\c01$text\c01");
 	}
-	
+
+	method !default-to() {
+		$.where eq $.state<nick> ?? $.who !! $.where;
+	}
 	
 	method Str {
 		$.what ?? ~$.what !! $.raw;
