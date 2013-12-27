@@ -1,7 +1,8 @@
 use v6;
+use Net::IRC::CommandHandler;
 use Net::IRC::TextUtil;
 
-class Net::IRC::Modules::Tell {
+class Net::IRC::Modules::Tell does Net::IRC::CommandHandler {
 	class Message {
 		has $.sender;
 		has $.message;
@@ -9,9 +10,9 @@ class Net::IRC::Modules::Tell {
 	}
 	has %messages;
 	
-	multi method said ( $ev where {$ev.what ~~ /^<{$ev.state<nick>}><.punct>?<.ws>'tell'/} ) {
+	method command_tell ( $ev, $match ) {
 		my $from = $ev.who;
-		if $ev.what ~~ /tell <.ws> $<name>=<-space -punct>+ <.punct>? <.ws> $<msg>=[.+]/ {
+		if $match<params> ~~ /$<name>=<+ alpha + [ \[..\] \{..\} ]>+ <.punct>? <.ws> $<msg>=[.+]/ {
 			if $<name>.lc eq $from.lc|'me' {
 				$ev.msg("$from: I think you can tell yourself that!");
 				return;
@@ -21,6 +22,9 @@ class Net::IRC::Modules::Tell {
 				Message.new(sender => $from, when => time, message => ~$<msg>)
 			);
 			$ev.msg("$from: Noted. I'll pass that on when I see $<name>");
+		}
+		else {
+			self.usage($ev, 'tell <nick> <message>');
 		}
 	}
 	
