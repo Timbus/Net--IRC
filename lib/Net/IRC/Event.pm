@@ -7,6 +7,7 @@ class Net::IRC::Event {
 	has $.command is rw;
 	has $.conn is rw;
 	has $.state is rw;
+	has $.bot is rw;
 	
 	#Most events can have these.
 	has $.who is rw;
