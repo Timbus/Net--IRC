@@ -25,11 +25,14 @@ role Net::IRC::CommandHandler {
 				$
 			} or take False;
 
+			# Let private chat act as specifying the bot's nick
+			my $nick = $<nick> || $ev.where eq $ev.state<nick>;
+
 			given $.required-intro {
-				when NICK   { take False unless $<nick>		     }
-				when PREFIX { take False unless $<prefix>	     }
-				when EITHER { take False unless $<prefix> || $<nick> }
-				when BOTH   { take False unless $<prefix> && $<nick> }
+				when NICK   { take False unless $nick		   }
+				when PREFIX { take False unless $<prefix>	   }
+				when EITHER { take False unless $<prefix> || $nick }
+				when BOTH   { take False unless $<prefix> && $nick }
 			}
 
 			take $/;
