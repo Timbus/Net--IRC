@@ -2,6 +2,7 @@ use v6;
 use Net::IRC::CommandHandler;
 use Net::IRC::TextUtil;
 
+#= Track the comings and goings of channel members
 class Net::IRC::Modules::Seen does Net::IRC::CommandHandler {
 	class Seen {
 		has $.when = now;
@@ -31,7 +32,7 @@ class Net::IRC::Modules::Seen does Net::IRC::CommandHandler {
 		%!seen{~$ev.what} := Seen.new(:how('changing nick from'), :what(~$ev.who));
 	}
 
-
+	#= Use 'seen <nick>' to see the latest activity seen for a given nick; you may specify more than one nick at a time, separated by spaces
 	method command_seen ( $ev, $/ ) {
 		my @params = ($<params> // '').comb(/\S+/);
 		if @params {
