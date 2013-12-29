@@ -114,6 +114,7 @@ class Net::IRC::Bot {
 			:command(~$raw<command>),
 			:conn($.conn),
 			:state(%.state),
+			:bot(self),
 			:who($who),
 			:where(~$raw<params>[0]),
 			:what(~$raw<params>[$l ?? $l-1 !! 0]),

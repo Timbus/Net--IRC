@@ -2,6 +2,7 @@ use v6;
 use Net::IRC::CommandHandler;
 use Net::IRC::TextUtil;
 
+#= Save messages to pass on to users when they are active again
 class Net::IRC::Modules::Tell does Net::IRC::CommandHandler {
 	class Message {
 		has $.sender;
@@ -10,6 +11,7 @@ class Net::IRC::Modules::Tell does Net::IRC::CommandHandler {
 	}
 	has %messages;
 	
+	#= Use 'tell <nick> <message>' to save a message for delivery when that nick is active again
 	method command_tell ( $ev, $match ) {
 		my $from = $ev.who;
 		if $match<params> ~~ /$<name>=<+ alpha + [ \[..\] \{..\} ]>+ <.punct>? <.ws> $<msg>=[.+]/ {

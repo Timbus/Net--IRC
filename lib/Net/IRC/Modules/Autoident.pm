@@ -1,6 +1,7 @@
 use v6;
 module Net::IRC::Modules::Autoident;
 
+#= Automatically identify with Nickserv
 class Net::IRC::Modules::Autoident {
 	has $.password = die "Need to tell Autoident your password if you want it to work!";
 	multi method connected($ev) {
