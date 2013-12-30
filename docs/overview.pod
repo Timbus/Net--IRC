@@ -1,0 +1,48 @@
+=head1 Design Overview
+
+Net::IRC is a bot framework -- a collection of roles and classes that make
+it easy to create and extend IRC bots.  The core functionality handles the
+basics of connecting to and communicating with IRC servers, parsing the IRC
+protocol into a series of events, dispatching these events to the proper
+modules and methods, and so on.
+
+Most of the "visible" functionality that a given bot provides is captured
+in a collection of modules, each responding to specific events or commands
+from other IRC users.  For example, there are stock modules that provide
+a help system, deliver delayed messages, track recent user activity, send
+random silly messages, and so on.  When instantiating a new bot, the user
+selects and configures the appropriate modules, and Net::IRC::Bot does the
+rest.
+
+Likewise, to extend a bot's functionality, the user creates new modules
+that react to new events or commands appropriately.  Here again the
+framework tries to help -- almost all of the IRC-specific boilerplate is 
+abstracted away, leaving just the essentials to be implemented.
+
+
+=head1 The Core
+
+The skeleton of the framework is Net::IRC::Bot, which creates and manages
+the IRC server connection, arranges for incoming IRC messages to be parsed
+into events, and dispatches these events to modules interested in them.
+
+The initial IRC messaging parsing is done by Net::IRC::Parser::RawEvent;
+the resulting raw parse is handed to Net::IRC::Bot's !dispatch method,
+which expands it into a full Net::IRC::Event and passes it to matching
+low-level IRC event handlers.  A fair few of these are provided by
+Net::IRC::Handlers::Default, which provides the basics to be a good IRC
+citizen, track joins and parts, and so on.
+
+After the low-level handlers have had their turn, high-level events such
+as PRIVMSG and NOTICE are dispatched to appropriate methods of all active
+modules.  For example, when a NOTICE message is received, !dispatch
+attempts to call the .noticed method of every module that has one, handing
+each the full Net::IRC::Event object.  (I say "attempts", because it is
+idiomatic for action methods to use where clauses limiting the events
+they will be called for.)
+
+To make it easier to write these modules, Net::IRC::CommandHandler
+provides a bit of extra scaffolding for writing commands, such as 'help'
+and 'tell'.  Finally, Net::IRC::TextUtil provides a few functions to
+handle common formatting tasks so that each module doesn't need to write
+its own.
