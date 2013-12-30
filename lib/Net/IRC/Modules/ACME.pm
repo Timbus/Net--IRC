@@ -3,13 +3,25 @@ use Net::IRC::CommandHandler;
 
 module Net::IRC::Modules::ACME;
 
+#= Enjoy delicious bot snacks
+class Net::IRC::Modules::ACME::Botsnack does Net::IRC::CommandHandler {
+	my @replies = "Mmm, delicious.", "Yummy, thanks!", ":-)", "☺",
+	"Om nom nom nom", "Tasty!", "Nothing quite like a well-earned snack!";
+	
+	#= Use 'botsnack' to toss me a delicious bot snack
+	method command_botsnack ( $ev, $match ) {
+		$ev.msg("{$ev.who}: { @replies.pick }");
+	}
+}
+
 #= Emulate a (rather negative) Magic 8 Ball
-class Net::IRC::Modules::ACME::Eightball {
-	my @replies = "Probably not", "Nope", "Never", "Not a chance", "Doubt it", "No", 
-	"Answer hazy.. Oh wait there it is. It's a no.", "Yes.. Haha just kidding. No.", 
+class Net::IRC::Modules::ACME::Eightball does Net::IRC::CommandHandler {
+	my @replies = "Probably not", "Nope", "Never", "Not a chance", "Doubt it", "No",
+	"Answer hazy ... oh wait there it is.  It's a no.", "Yes!  Haha, just kidding.  No.",
 	"No.", "Aww hell naw";
 	
-	multi method said ( $ev where {.what ~~ /^\!8ball <.ws> .+/} ) {
+	#= Use '8ball' to consult the Magic 8 Ball
+	method command_8ball ( $ev, $match ) {
 		$ev.msg("{$ev.who}: { @replies.pick }");
 	}
 }
@@ -47,6 +59,16 @@ class Net::IRC::Modules::ACME::Bark::LikeATree does Net::IRC::CommandHandler {
 	#= Use 'bark' to see me describe tree bark
 	method command_bark($ev, $match) {
 		$ev.msg("The bark is smooth and brown.");
+	}
+}
+
+#= Use a rotated alphabet to (de)obfuscate (ASCII) text
+class Net::IRC::Modules::ACME::Rot13 does Net::IRC::CommandHandler {
+	#= Use 'rot13 <message>' to (de)obfuscate a message with rot13
+	method command_rot13($ev, $match) {
+		my $message = $match<params>.trans('A..Z' => 'N..ZA..M',
+						   'a..z' => 'n..za..m');
+		$ev.msg($message);
 	}
 }
 
