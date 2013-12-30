@@ -12,6 +12,11 @@ NOTE: This is more a brain dump at the moment than a formal document.
 =item2     Subprocesses (for modules that spawn external programs)
 =item2     Short-lived socket connections (e.g. HTTP GET requests)
 =item2     Long-lived socket connections (e.g. DB handles)
+=item1 Concurrency goals
+=item2     Only bot-wide state changes should hold up core bot processing
+=item2     A slow connection/resource should not hold up other connections
+=item2     A slow event should not hold up other events
+=item2     Event and connection/resource work should process concurrently
 =item1 Simple to use and reason about
 =item2     Module authors should have a very simple API
 =item2     If possible, the API should be I<invisible> for simple modules
@@ -30,3 +35,22 @@ NOTE: This is more a brain dump at the moment than a formal document.
 =item3         HTTP (non-streaming/non-persistent to start)
 =item3         Spawn subprocess with or without capture?
 =item3         Logging
+=item3         Authn/authz/trust
+
+
+=head2 Design Concepts
+
+The basic idea is that every connection (in the general sense, i.e.
+including the console, subprocesses, etc.) or chunk of mutable state will
+be managed by a single task, connected to the rest of the framework via
+channels, guaranteeing relatively sane semantics for the shared resources.
+
+Likewise, each event will be handled by a separate task, so that events
+can be processed concurrently.  It is currently unclear whether individual
+dispatches for a single event need their own subtasks, or if instead this
+turns out to be unneeded in actual practice since most slow operations will
+involve access to concurrently-managed resources anyway.
+
+A simple synchronous API should be layered on top of the connection/resource
+concurrency so that modules can be written in standard blocking style
+without gumming up the works.
