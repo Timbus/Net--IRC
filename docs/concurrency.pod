@@ -1,0 +1,32 @@
+=head1 Concurrency
+
+NOTE: This is more a brain dump at the moment than a formal document.
+
+
+=head2 Design Constraints
+
+=item1 Several different simultaneous connections needed
+=item2     One or more IRC servers
+=item2     The console
+=item2     A logger, if not the console
+=item2     Subprocesses (for modules that spawn external programs)
+=item2     Short-lived socket connections (e.g. HTTP GET requests)
+=item2     Long-lived socket connections (e.g. DB handles)
+=item1 Simple to use and reason about
+=item2     Module authors should have a very simple API
+=item2     If possible, the API should be I<invisible> for simple modules
+=item2     It should be easy to write concurrency-aware modules correctly
+=item2     It should be easy to confirm the core system is correct
+=item1 Simple core
+=item2     The core system should provide little more than basic scaffolding
+=item2     Most functionality moved out to modules
+=item2     Common functionality used by multiple modules moved to roles
+=item1 Stock functionality/services
+=item2     Modules should be able to just use (not reinvent) common services
+=item2     These should be provided by modules or roles, as appropriate
+=item2     New common functionality needed:
+=item3         Key/value store
+=item3         DB access
+=item3         HTTP (non-streaming/non-persistent to start)
+=item3         Spawn subprocess with or without capture?
+=item3         Logging
