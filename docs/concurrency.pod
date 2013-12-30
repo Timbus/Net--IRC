@@ -49,8 +49,27 @@ Likewise, each event will be handled by a separate task, so that events
 can be processed concurrently.  It is currently unclear whether individual
 dispatches for a single event need their own subtasks, or if instead this
 turns out to be unneeded in actual practice since most slow operations will
-involve access to concurrently-managed resources anyway.
+involve access to concurrently-managed resources anyway.  Subtasks within
+an event would reduce the effectiveness of per-event caches, unless there
+were a separate caching phase before heavy work, which sounds like uneeded
+complexity.  On the other hand, there is some value in allowing a method
+to throw (part of) itself into a subtask, without imposing this fine-grained
+concurrency on all dispatches and thus forcing it into core.
 
 A simple synchronous API should be layered on top of the connection/resource
 concurrency so that modules can be written in standard blocking style
 without gumming up the works.
+
+
+=head2 Inch Pebbles
+
+Small pieces of work, in a partially ordered list.
+
+=item1 All non-event-local mutation via API, not direct access
+=item1 Abstract IRC, console, and log connections behind channels
+=item1 Each event in a separate task
+=item1 Move all connections out to non-core modules
+=item1 Implement simple K/V store
+=item1 Implement simple HTTP GET
+=item1 Clean up APIs, making sure both sync and async forms exist
+=item1 Reassess current design and progress; add more inch pebbles
