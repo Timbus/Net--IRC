@@ -72,5 +72,23 @@ class Net::IRC::Modules::ACME::Rot13 does Net::IRC::CommandHandler {
 	}
 }
 
+#= Give someone a cuddle or hug
+class Net::IRC::Modules::ACME::Hug does Net::IRC::CommandHandler {
+	#= Use 'hug <nick>' to send someone a hug, or 'hug me' to ask for one
+	method command_hug($ev, $match) {
+		# Original hug logic from https://github.com/moritz/hugme/blob/master/hugme.pl#L85
+		my $recipient = $match<params> eq 'me' ?? $ev.who !! $match<params>;
+		my $extra = '';
+		$extra ~= ' and blushes'  if rand > .95;
+		$extra ~= "; {$ev.who}++" if rand > .99;
+		$ev.act("$match<command>s $recipient$extra");
+	}
+
+	#= Use 'cuddle <nick>' to send someone a cuddle, or 'cuddle me' to ask for one
+	method command_cuddle($ev, $match) {
+		self.command_hug($ev, $match);
+	}
+}
+
 # vim: ft=perl6 tabstop=4 shiftwidth=4
 
