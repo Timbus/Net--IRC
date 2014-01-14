@@ -51,7 +51,7 @@ dispatches for a single event need their own subtasks, or if instead this
 turns out to be unneeded in actual practice since most slow operations will
 involve access to concurrently-managed resources anyway.  Subtasks within
 an event would reduce the effectiveness of per-event caches, unless there
-were a separate caching phase before heavy work, which sounds like uneeded
+were a separate caching phase before heavy work, which sounds like unneeded
 complexity.  On the other hand, there is some value in allowing a method
 to throw (part of) itself into a subtask, without imposing this fine-grained
 concurrency on all dispatches and thus forcing it into core.

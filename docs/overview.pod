@@ -20,7 +20,7 @@ framework tries to help -- almost all of the IRC-specific boilerplate is
 abstracted away, leaving just the essentials to be implemented.
 
 
-=head1 The Core
+=head2 The Core
 
 The skeleton of the framework is Net::IRC::Bot, which creates and manages
 the IRC server connection, arranges for incoming IRC messages to be parsed
