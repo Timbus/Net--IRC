@@ -14,6 +14,9 @@ enum LogLevel is export <
     EMERGENCY
 >;
 
+my %level-icon = map { $_ => $_ === EMERGENCY ?? '!' !! $_.Str.substr(0, 1) },
+                     LogLevel.^enum_value_list;
+
 class Net::IRC::Logger {
     has LogLevel   $.min-level;
     has IO::Path   $.path;
@@ -45,6 +48,7 @@ class Net::IRC::Logger {
         $self;
     }
 
+    # XXXX: This is currently too slow (easily dominating logging performance)
     method timestamp($time = now) {
         my $dt = DateTime.new($time);
         sprintf('%4d-%02d-%02d %02d:%02d:%02d.%03d',
@@ -54,13 +58,12 @@ class Net::IRC::Logger {
     }
 
     method log(LogLevel $level, $message) {
-        return if !self || $level < $.min-level;
-
-        my $icon   = $level ~~ EMERGENCY ?? '!' !! $level.Str.substr(0, 1);
-        my $loads  = $*SCHEDULER.loads.join: ',';
-        my $prefix = "$icon $loads $.timestamp: ";
-
-        $!channel.send: $prefix ~ $message;
+        if self && $level >= $!min-level {
+            my $icon   = %level-icon{$level};
+            my $loads  = $*SCHEDULER.loads.join: ',';
+            my $time   = (nqp::time_n).fmt('%.3f');
+            $!channel.send: "$icon $loads $time: $message";
+        }
     }
 
     method debug($message) { self.log(DEBUG,     $message) }
