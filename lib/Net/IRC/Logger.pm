@@ -64,11 +64,11 @@ class Net::IRC::Logger {
     }
 
     method debug($message) { self.log(DEBUG,     $message) }
-    method info($message)  { self.log(INFO,      $message) }
-    method note($message)  { self.log(NOTICE,    $message) }
-    method warn($message)  { self.log(WARNING,   $message) }
+    method info ($message) { self.log(INFO,      $message) }
+    method note ($message) { self.log(NOTICE,    $message) }
+    method warn ($message) { self.log(WARNING,   $message) }
     method error($message) { self.log(ERROR,     $message) }
-    method crit($message)  { self.log(CRITICAL,  $message) }
+    method crit ($message) { self.log(CRITICAL,  $message) }
     method alert($message) { self.log(ALERT,     $message) }
     method emerg($message) { self.log(EMERGENCY, $message) }
 }
