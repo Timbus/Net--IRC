@@ -32,6 +32,7 @@ class Net::IRC::Logger {
         my $self    = self.bless(:$min-level, :$path, :$handle, :$channel);
 
         start {
+            $self.info('Starting channel -> log thread');
             loop {
                 winner $channel {
                     # XXXX: Would normally like to open/append/close for
@@ -62,7 +63,7 @@ class Net::IRC::Logger {
             my $icon   = %level-icon{$level};
             my $loads  = $*SCHEDULER.loads.join: ',';
             my $time   = (nqp::time_n).fmt('%.3f');
-            $!channel.send: "$icon $loads $time: $message";
+            $!channel.send: "$icon $loads $time $*THREAD.id(): $message";
         }
     }
 
@@ -74,6 +75,11 @@ class Net::IRC::Logger {
     method crit ($message) { self.log(CRITICAL,  $message) }
     method alert($message) { self.log(ALERT,     $message) }
     method emerg($message) { self.log(EMERGENCY, $message) }
+
+    method close() {
+        self.info('Closing log');
+        $!channel.close
+    }
 }
 
 
