@@ -22,14 +22,24 @@ class Net::IRC::Logger {
     has IO::Path   $.path;
     has IO::Handle $!handle;
     has Channel    $!channel;
+    has Bool       $!closeable;
 
-    submethod BUILD(:$!min-level, :$!path, :$!handle, :$!channel) {}
+    submethod BUILD(:$!min-level, :$!path, :$!handle, :$!channel, :$!closeable) {}
 
-    method new(Cool $path is copy, LogLevel :$min-level = INFO) {
-        $path      .= path;
-        my $handle  = $path.open(:w);
+    method new($log, LogLevel :$min-level = INFO) {
+        my ($path, $handle, $closeable);
+        if $log ~~ IO::Handle {
+            $path      = IO::Path;
+            $handle    = $log;
+            $closeable = False;
+        }
+        else {
+            $path      = $log.path;
+            $handle    = $path.open(:w);
+            $closeable = True;
+        }
         my $channel = Channel.new;
-        my $self    = self.bless(:$min-level, :$path, :$handle, :$channel);
+        my $self    = self.bless(:$min-level, :$path, :$handle, :$channel, :$closeable);
 
         start {
             $self.info('Starting channel -> log thread');
@@ -40,7 +50,7 @@ class Net::IRC::Logger {
                     #       but right now this is REALLY SLOW (~100x slower)
 
                     more * { $handle.print(/\n $/ ?? $_ !! "$_\n")  }
-                    done * { $handle.close; last }
+                    done * { $handle.close if $closeable; last }
                 }
             }
         }
@@ -78,7 +88,7 @@ class Net::IRC::Logger {
 
     method close() {
         self.info('Closing log');
-        $!channel.close
+        $!channel.close;
     }
 }
 
