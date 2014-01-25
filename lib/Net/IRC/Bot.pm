@@ -1,10 +1,20 @@
 use v6;
+
+use Net::IRC::Logger;
+use Net::IRC::SocketConnection;
 use Net::IRC::Handlers::Default;
 use Net::IRC::Parser;
 use Net::IRC::Event;
 
 class Net::IRC::Bot {
+	#Connection management
 	has $.conn is rw;
+	has $!done;
+
+	#Logging
+	has $.log-level = INFO;
+	has $.logfile   = $*OUT;
+	has $.log       = $*LOG;
 
 	#Set some sensible defaults for the bot.
 	#These are not stored as state, they are just used for the bot's "start state"
@@ -22,8 +32,6 @@ class Net::IRC::Bot {
 
 	#Most important part of the bot.
 	has @.modules;
-	#Options
-	has $.debug = False;
 
 	#State variables.
 	#TODO: Make this an object for cleaner syntax.
@@ -49,20 +57,16 @@ class Net::IRC::Bot {
 	method !connect(){
 		#Establish connection to server
 		self!resetstate;
-		say "Connecting to $.server on port $.port";
-		my role irc-connection[$debug] {
-			method sendln(Str $string, :$scrubbed = $string){
-				say "»»» $scrubbed" if $debug;
-				self.send($string~"\c13\c10");
-			}
-			method get(|){
-				my $line = callsame();
-				say "<-- $line" if $debug;
-				$line;
-			}
-		}
-		$.conn = IO::Socket::INET.new(host => $.server, port => $.port)
-			but irc-connection[$.debug];
+		$.log.info: "Connecting to $.server:$.port";
+		$.conn = Net::IRC::SocketConnection.new(
+			host => $.server, port => $.port,
+			input-line-separator => "\c13\c10");
+
+		#Listen for lines from socket
+		$.conn.get.tap: { self!process-line($_) };
+
+		#Notice when socket closes
+		$.conn.recv.tap: {;}, done => { $!done = True };
 
 		#Send PASS if needed
 		$.conn.sendln("PASS $.password", scrubbed => 'PASS ...')
@@ -85,18 +89,27 @@ class Net::IRC::Bot {
 
 
 	method run() {
+		$!log = Net::IRC::Logger.new($.logfile, :min-level($.log-level))
+			if !$.log && $.logfile;
+
 		self!disconnect;
 		self!connect;
-		loop {
-			#XXX: Support for timed events?
-			my $line = $.conn.get
-				or die "Connection error.";
-			$line ~~ s/<[\n\r]>+$//;
+		sleep .1 while !$!done;
 
-			my $event = Net::IRC::Parser::RawEvent.parse($line)
-				or $*ERR.say("Could not parse the following IRC event: $line.perl()") and next;
+		self!disconnect;
+		$.log.close;
+		sleep .1 while $*SCHEDULER.loads[0];
+	}
 
-			self!dispatch($event);
+	method !process-line($line) {
+		start {
+			$.log.debug: "<-- $line";
+			if Net::IRC::Parser::RawEvent.parse($line) -> $raw {
+				self!dispatch($raw);
+			}
+			else {
+				$.log.error("Could not parse the following IRC event: $line");
+			}
 		}
 	}
 
@@ -114,6 +127,7 @@ class Net::IRC::Bot {
 			:command(~$raw<command>),
 			:conn($.conn),
 			:state(%.state),
+			:log($.log),
 			:bot(self),
 			:who($who),
 			:where(~$raw<params>[0]),
@@ -128,10 +142,8 @@ class Net::IRC::Bot {
 				#Check to see if its a CTCP request.
 				if $event.what ~~ /^\c01 (.*) \c01$/ {
 					my $text = ~$0;
-					if $.debug {
-						say "Received CTCP $text from {$event.who}" ~
-						( $event.where eq $event.who ?? '.' !! " (to channel {$event.where})." );
-					}
+					$.log.debug: "Received CTCP $text from {$event.who}" ~
+						( $event.where eq $event.who ?? '.' !! " (to channel {$event.where}).");
 
 					$text ~~ /^ (.+?) [<.ws> (.*)]? $/;
 					$event.what = $1 && ~$1;
@@ -169,6 +181,7 @@ class Net::IRC::Bot {
 	}
 
 	method do_dispatch($method, $event) {
+		$.log.debug: "Dispatching $method event: $event";
 		for @.modules -> $mod {
 			if $mod.^find_method($method) -> $multi {
 				$multi.cando(Capture.new(list => [$mod, $event]))>>.($mod, $event);
