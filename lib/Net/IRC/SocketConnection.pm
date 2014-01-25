@@ -98,7 +98,9 @@ class Net::IRC::SocketConnection {
     }
 
     multi method sendln(Str $text, :$scrubbed = $text) {
-        $.to-socket.send: "$text\c13\c10".encode('utf8') => $scrubbed;
+        # This should be an *output* line separator, but that doesn't exist.
+        my $sep := $.socket.input-line-separator;
+        $.to-socket.send: "$text$sep".encode('utf8') => $scrubbed;
     }
 
     method close(:$to is copy, :$from is copy) {
