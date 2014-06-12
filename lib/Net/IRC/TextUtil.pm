@@ -35,4 +35,31 @@ sub friendly-duration($seconds) is export {
 	}
 }
 
+
+# IRC Max message length is 512. 
+#-2 for \r\n,
+#-65 for max hostname length, and the @! symbols
+# = 445 right off the bat.
+constant max-length = 445;
+
+# And also if not known, we also take the following:
+#-30 for max nickname length (most servers)
+#-30 userident
+#-32 max channel name
+#-10 for command + colon
+# = 102 worst case.
+constant max-prefix = 102;
+
+sub cut($text, $prefix-length=max-prefix) is export {
+	my $maxlen = max-length - $prefix-length;
+	return gather for $text.lines -> $line is rw {
+		while $line.encode.bytes > $maxlen {
+			#Break up the line using a nearby space if possible.
+			my $index = $line.rindex(" ", $maxlen) || $maxlen;
+			take ($line.substr-rw(0, $index, ''));
+		}
+		take ($line); 
+	}
+}
+
 # vim: ft=perl6 tabstop=4 shiftwidth=4

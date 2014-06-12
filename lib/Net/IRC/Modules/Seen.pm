@@ -38,7 +38,7 @@ class Net::IRC::Modules::Seen does Net::IRC::CommandHandler {
 		if @params {
 			for @params -> $nick {
 				if %!seen{$nick} -> $seen {
-					my $dt	    = DateTime.new($seen.when);
+					my $dt      = DateTime.new($seen.when);
 					my $stamp   = $dt.Str.subst('T', ' ');
 					my $seconds = now - $seen.when;
 					my $elapsed = friendly-duration($seconds);
