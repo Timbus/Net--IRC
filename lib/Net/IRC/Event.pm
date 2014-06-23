@@ -24,7 +24,7 @@ class Net::IRC::Event {
 		my $prepend-length = 
 			$prepend.encode.bytes + 
 			$.state<nick>.encode.bytes + 
-			$.state<ident>.encode.bytes;
+			$.state<username>.encode.bytes;
 		$.conn.sendln($prepend~$_) for cut($text, $prepend-length);
 	}
 
@@ -33,7 +33,7 @@ class Net::IRC::Event {
 		my $prepend-length = 
 			$prepend.encode.bytes + 
 			$.state<nick>.encode.bytes + 
-			$.state<ident>.encode.bytes;
+			$.state<username>.encode.bytes;
 		$.conn.sendln($prepend~$_) for cut($text, $prepend-length);
 	}
 	
