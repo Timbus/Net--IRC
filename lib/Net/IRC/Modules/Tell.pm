@@ -19,7 +19,7 @@ class Net::IRC::Modules::Tell does Net::IRC::CommandHandler {
 				$ev.msg("$from: I think you can tell yourself that!");
 				return;
 			}
-			%messages{$<name>.lc} //= []; #/
+			%messages{$<name>.lc} //= [];
 			%messages{$<name>.lc}.push(
 				Message.new(sender => $from, when => time, message => ~$<msg>)
 			);

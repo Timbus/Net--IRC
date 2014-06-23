@@ -159,6 +159,14 @@ class Net::IRC::Bot {
 				self.do_dispatch("nickchange", $event);
 			}
 
+			when "PART" {
+				self.do_dispatch("parted", $event);
+			}
+
+			when "QUIT" {
+				self.do_dispatch("on-quit", $event);
+			}
+
 			when "376"|"422" {
 				#End of motd / no motd. (Usually) The last thing a server sends the client on connect.
 				self.do_dispatch("connected", $event);
