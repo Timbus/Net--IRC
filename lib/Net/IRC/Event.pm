@@ -1,5 +1,5 @@
 use v6;
-
+use Net::IRC::TextUtil;
 class Net::IRC::Event {
 
 	#EVERY event has to have these:
@@ -20,20 +20,21 @@ class Net::IRC::Event {
 	
 	##Utility methods
 	method msg($text, $to = self!default-to) {
-		##IRC RFC specifies 510 bytes as the maximum allowed to send per line. 
-		#I'm going with 480, as 510 seems to get cut off on some servers.
-
 		my $prepend = "PRIVMSG $to :";
-		my $maxlen = 480-$prepend.encode.bytes;
-		for $text.split(/\c13?\c10/) -> $line is rw {
-			while $line.encode.bytes > $maxlen {
-				#Break up the line using a nearby space if possible.
-				my $index = $line.rindex(" ", $maxlen) || $maxlen;
-				$.conn.sendln($prepend~$line.substr(0, $index));
-				$line = $line.substr($index+1); 
-			}
-			$.conn.sendln($prepend~$line); 
-		}
+		my $prepend-length = 
+			$prepend.encode.bytes + 
+			$.state<nick>.encode.bytes + 
+			$.state<ident>.encode.bytes;
+		$.conn.sendln($prepend~$_) for cut($text, $prepend-length);
+	}
+
+	method notice($text, $to = self!default-to) {
+		my $prepend = "NOTICE $to :";
+		my $prepend-length = 
+			$prepend.encode.bytes + 
+			$.state<nick>.encode.bytes + 
+			$.state<ident>.encode.bytes;
+		$.conn.sendln($prepend~$_) for cut($text, $prepend-length);
 	}
 	
 	method act($text, $to = self!default-to) {

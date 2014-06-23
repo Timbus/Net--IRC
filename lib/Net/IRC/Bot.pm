@@ -38,6 +38,7 @@ class Net::IRC::Bot {
 	method !resetstate() {
 		%.state = (
 			nick         => $.nick,
+			username     => $.username,
 			altnicks     => @.altnicks,
 			autojoin     => @.channels,
 			channels     => %(),
@@ -106,9 +107,6 @@ class Net::IRC::Bot {
 		my $who = ($raw<user> || $raw<server> || "");
 		$who does role { method Str { (self<nick> // self<host> ).Str } }
 
-		#XXX Stupid workaround.
-		my $l = $raw<params>.elems;
-
 		my $event = Net::IRC::Event.new(
 			:raw($raw),
 			:command(~$raw<command>),
@@ -117,7 +115,7 @@ class Net::IRC::Bot {
 			:bot(self),
 			:who($who),
 			:where(~$raw<params>[0]),
-			:what(~$raw<params>[$l ?? $l-1 !! 0]),
+			:what(~$raw<params>[*-1]),
 		);
 
 
@@ -159,6 +157,14 @@ class Net::IRC::Bot {
 
 			when "NICK" {
 				self.do_dispatch("nickchange", $event);
+			}
+
+			when "PART" {
+				self.do_dispatch("parted", $event);
+			}
+
+			when "QUIT" {
+				self.do_dispatch("on-quit", $event);
 			}
 
 			when "376"|"422" {

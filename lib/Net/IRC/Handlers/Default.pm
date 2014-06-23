@@ -63,20 +63,30 @@ class Net::IRC::Handlers::Default {
 	multi method irc_kick($ev) {
 		my $kicked = ~$ev.raw<params>[1];
 		if $kicked eq $ev.state<nick> {
-			$ev.state<channels>.delete( ~$ev.where );
+			$ev.state<channels>{ ~$ev.where }:delete;
 		}
 		else {
-			$ev.state<channels>{ ~$ev.where }.delete($kicked);
+			$ev.state<channels>{ ~$ev.where }{$kicked}:delete;
 		}
 	}
 
 	multi method irc_part($ev) {
 		my $parted = $ev.who<nick>;
 		if $parted eq $ev.state<nick> {
-			$ev.state<channels>.delete( ~$ev.where );
+			$ev.state<channels>{ ~$ev.where }:delete;
 		}
 		else {
-			$ev.state<channels>{ ~$ev.where }.delete($parted);
+			$ev.state<channels>{ ~$ev.where }{$parted}:delete;
+		}
+	}
+
+	multi method irc_quit($ev) {
+		my $quitter = $ev.who<nick>;
+		if $quitter eq $ev.state<nick> {
+			#Oh..
+		}
+		else {
+			$ev.state<channels>{ ~$ev.where }{$quitter}:delete;
 		}
 	}
 
@@ -87,7 +97,7 @@ class Net::IRC::Handlers::Default {
 		}
 		else {
 			for $ev.state<channels>.values -> $users {
-				$users.delete($oldnick) && $users<$nick> = 1 if $users<$oldnick>;
+				$users{$oldnick}:delete && $users<$nick> = 1 if $users<$oldnick>;
 			}
 		} 
 	}
