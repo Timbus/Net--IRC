@@ -2,6 +2,20 @@
 	"name" : "Net::IRC::Bot",
 	"version" : "0.9",
 	"description" : "An IRC bot framework",
+	"provides" : {
+		"Net::IRC::Bot"                : "lib/Net/IRC/Bot.pm",
+		"Net::IRC::Parser"             : "lib/Net/IRC/Parser.pm",
+		"Net::IRC::Event"              : "lib/Net/IRC/Event.pm",
+		"Net::IRC::CommandHandler"     : "lib/Net/IRC/CommandHandler.pm",
+		"Net::IRC::TextUtil"           : "lib/Net/IRC/TextUtil.pm",
+		"Net::IRC::Modules::Seen"      : "lib/Net/IRC/Modules/Seen.pm",
+		"Net::IRC::Modules::Help"      : "lib/Net/IRC/Modules/Help.pm",
+		"Net::IRC::Modules::Twitter"   : "lib/Net/IRC/Modules/Twitter.pm",
+		"Net::IRC::Modules::Tell"      : "lib/Net/IRC/Modules/Tell.pm",
+		"Net::IRC::Modules::Autoident" : "lib/Net/IRC/Modules/Autoident.pm",
+		"Net::IRC::Modules::ACME"      : "lib/Net/IRC/Modules/ACME.pm",
+		"Net::IRC::Handlers::Default"  : "lib/Net/IRC/Handlers/Default.pm"
+	},
 	"depends" : [],
 	"source-url" : "git://github.com/TiMBuS/Net--IRC.git"
 }
