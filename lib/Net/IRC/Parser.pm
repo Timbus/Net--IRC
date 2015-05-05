@@ -11,7 +11,7 @@ grammar RawEvent {
 	}
 
 	token user {
-		$<nick>=<-[:!]>+ '!' $<ident>=<-[@]>+ '@' <host>
+		$<nick>=<-[:!\s]>+ '!' $<ident>=<-[@]>+ '@' <host>
 	}
 
 	token host {
