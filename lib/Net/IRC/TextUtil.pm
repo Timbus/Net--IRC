@@ -1,6 +1,6 @@
 use v6;
 
-module Net::IRC::TextUtil;
+unit module Net::IRC::TextUtil;
 
 sub _s($num, $plural = 's', $singular = '') is export {
 	$num == 1 ?? $singular !! $plural;
