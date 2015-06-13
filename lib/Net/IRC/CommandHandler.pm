@@ -17,7 +17,7 @@ role Net::IRC::CommandHandler {
 			$ev.what ~~ token {
 				# Intro
 				^
-				[ \s* $<nick>=("$ev.state()<nick>") [ <[':' ',']> | \s ] ]? \s*
+				[ \s* $<nick>=("$ev.state()<nick>") [ ':' | ',' | \s ] ]? \s*
 				[ $<prefix>=("$handler.prefix()") \s* ]?
 
 				# Actual command (and optional params)
