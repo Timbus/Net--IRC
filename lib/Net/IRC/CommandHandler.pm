@@ -21,10 +21,10 @@ role Net::IRC::CommandHandler {
 	has RequiredIntro $.required-intro is rw = EITHER;
 
 	has @!cmds = self.^methods.grep(Command);
-	
+
 	has %cmd-names   = @!cmds.map({ $^n.name => $^n });
 	has %short-names = {}.push( 
-		@!cmds.grep(*.abbreviate).map({ abbrev($^n.name) X=> $^n }) 
+		@!cmds.grep(*.abbreviate).map({ abbrev($^n.name) X=> $^n })
 	);
 
 	method recognized($handler: $ev) {
@@ -35,7 +35,7 @@ role Net::IRC::CommandHandler {
 				[ \s* $<nick>=("$ev.state()<nick>") [ <[:,]> | \s ] ]? \s*
 				[ $<prefix>=("$handler.prefix()") \s* ]?
 
-				# Actual command (and optional params) 
+				# Actual command (and optional params)
 				$<command>=(\w+) [ <?> | \s+ $<params>=(.*) ]
 				$
 			} or take False;

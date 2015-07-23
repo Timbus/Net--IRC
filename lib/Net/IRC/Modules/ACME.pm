@@ -1,7 +1,7 @@
 use v6;
 use Net::IRC::CommandHandler;
 
-module Net::IRC::Modules::ACME;
+unit module Net::IRC::Modules::ACME;
 
 #= Enjoy delicious bot snacks
 class Net::IRC::Modules::ACME::Botsnack does Net::IRC::CommandHandler {

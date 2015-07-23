@@ -1,6 +1,6 @@
 use v6;
 
-module Net::IRC::Parser;
+unit module Net::IRC::Parser;
 grammar RawEvent {
 	token TOP {
 		^ 
