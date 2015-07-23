@@ -1,5 +1,5 @@
 use v6;
-module Net::IRC::Modules::Autoident;
+unit module Net::IRC::Modules::Autoident;
 
 #= Automatically identify with Nickserv
 class Net::IRC::Modules::Autoident {
