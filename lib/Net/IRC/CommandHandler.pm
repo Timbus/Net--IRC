@@ -11,7 +11,7 @@ enum RequiredIntro is export <
 enum CommandType is export <Short Long>;
 role Command { has $.abbreviate };
 multi trait_mod:<is>(Routine:D $m, :cmd(:$command)!) is export {
-	$m does Command(abbreviate => $command !eqv Long);
+	$m does Command(abbreviate => ($command !eqv Long));
 }
 
 sub abbrev($name) { [\~] $name.comb }
@@ -32,7 +32,7 @@ role Net::IRC::CommandHandler {
 			$ev.what ~~ token {
 				# Intro
 				^
-				[ \s* $<nick>=("$ev.state()<nick>") [ <[':' ',']> | \s ] ]? \s*
+				[ \s* $<nick>=("$ev.state()<nick>") [ <[:,]> | \s ] ]? \s*
 				[ $<prefix>=("$handler.prefix()") \s* ]?
 
 				# Actual command (and optional params) 
