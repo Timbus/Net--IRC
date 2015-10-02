@@ -54,7 +54,7 @@ class Net::IRC::Bot {
 		my role irc-connection[$debug] {
 			method sendln(Str $string, :$scrubbed = $string){
 				say "»»» $scrubbed" if $debug;
-				self.send($string~"\c13\c10");
+				self.print($string~"\c13\c10");
 			}
 			method get(|){
 				my $line = callsame();
