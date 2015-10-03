@@ -13,7 +13,7 @@ class Net::IRC::Handlers::Default {
 		$ev.conn.sendln("PONG :{ $ev.what }");
 	}
 
-	has $nickattempts = 0; 
+	has $nickattempts = 0;
 	#443: ERR_NICKNAMEINUSE
 	multi method irc_433($ev) {
 		#If this event occurs while we try to login, try to change nicks. Otherwise ignore it.

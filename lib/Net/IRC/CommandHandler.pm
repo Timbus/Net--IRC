@@ -23,12 +23,12 @@ role Net::IRC::CommandHandler {
 	has @!cmds = self.^methods.grep(Command);
 
 	has %cmd-names   = @!cmds.map({ $^n.name => $^n });
-	has %short-names = {}.push( 
+	has %short-names = {}.push(
 		@!cmds.grep(*.abbreviate).map({ abbrev($^n.name) X=> $^n })
 	);
 
 	method recognized($handler: $ev) {
-		return $ev.cache<CommandHandler>{$handler.prefix} //= (gather {
+		return $ev.cache<CommandHandler>{$handler.prefix} //= sub {
 			$ev.what ~~ token {
 				# Intro
 				^
@@ -36,22 +36,22 @@ role Net::IRC::CommandHandler {
 				[ $<prefix>=("$handler.prefix()") \s* ]?
 
 				# Actual command (and optional params)
-				$<command>=(\w+) [ <?> | \s+ $<params>=(.*) ]
+				$<command>=(\w+) [ <?> | \s+ $<params>=(.*) ] #++# <- Fool sublime's perl parser
 				$
-			} or take False;
+			} or return False;
 
 			# Let private chat act as specifying the bot's nick
 			my $nick = $<nick> || $ev.where eq $ev.state<nick>;
 
 			given $.required-intro {
-				when NICK   { take False unless $nick              }
-				when PREFIX { take False unless $<prefix>          }
-				when EITHER { take False unless $<prefix> || $nick }
-				when BOTH   { take False unless $<prefix> && $nick }
+				when NICK   { return False unless $nick              }
+				when PREFIX { return False unless $<prefix>          }
+				when EITHER { return False unless $<prefix> || $nick }
+				when BOTH   { return False unless $<prefix> && $nick }
 			}
 
-			take $/;
-		})[0];
+			return $/;
+		}();
 	}
 
 	multi method said ($ev where { $/ := $.recognized($ev) }) {

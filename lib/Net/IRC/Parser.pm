@@ -3,10 +3,10 @@ use v6;
 unit module Net::IRC::Parser;
 grammar RawEvent {
 	token TOP {
-		^ 
-		[':' [<user>|<server=host>] <.space> || <?>] 
-		<command> 
-		[ <.space>+ [':'$<params>=(.*)$ || $<params>=<-space>+] ]* 
+		^
+		[':' [<user>|<server=host>] <.space> || <?>]
+		<command>
+		[ <.space>+ [':'$<params>=(.*)$ || $<params>=<-space>+] ]*
 		$
 	}
 
@@ -16,7 +16,7 @@ grammar RawEvent {
 
 	token host {
 		#[ <-space - [. $ @ !]>+ ] ** '.'
-		
+
 		#Due to some IRC servers/services allowing anything as a host format,
 		#I've decided to define a 'host' as 'anything but a space'. Bah.
 		<-space>+
