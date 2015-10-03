@@ -20,11 +20,10 @@ role Net::IRC::CommandHandler {
 	has Str $.prefix is rw = '!';
 	has RequiredIntro $.required-intro is rw = EITHER;
 
-	has @!cmds = self.^methods.grep(Command);
-
+	has @!cmds       = self.^methods.grep(Command);
 	has %cmd-names   = @!cmds.map({ $^n.name => $^n });
 	has %short-names = {}.push(
-		@!cmds.grep(*.abbreviate).map({ abbrev($^n.name) X=> $^n })
+		@!cmds.grep(*.abbreviate).map({ abbrev($^n.name) X=> $^n }).flat
 	);
 
 	method recognized($handler: $ev) {
