@@ -35,26 +35,26 @@ class Net::IRC::Bot {
 		$obj
 	}
 
-	method !resetstate() {
+	method !reset-state() {
 		%.state = (
-			nick         => $.nick,
-			username     => $.username,
-			altnicks     => @.altnicks,
-			autojoin     => @.channels,
-			channels     => %(),
-			loggedin     => False,
-			connected    => False,
+			nick      => $.nick,
+			username  => $.username,
+			altnicks  => @.altnicks,
+			autojoin  => @.channels,
+			channels  => %(),
+			loggedin  => False,
+			connected => False,
 		)
 	}
 
 	method !connect(){
 		#Establish connection to server
-		self!resetstate;
+		self!reset-state;
 		say "Connecting to $.server on port $.port";
 		my role irc-connection[$debug] {
 			method sendln(Str $string, :$scrubbed = $string){
 				say "»»» $scrubbed" if $debug;
-				self.send($string~"\c13\c10");
+				self.print($string~"\c13\c10");
 			}
 			method get(|){
 				my $line = callsame();
@@ -104,8 +104,12 @@ class Net::IRC::Bot {
 	method !dispatch($raw) {
 		#Make an event object and fill it as much as we can.
 		#XXX: Should I just use a single cached Event to save memory?
-		my $who = ($raw<user> || $raw<server> || "");
-		$who does role { method Str { (self<nick> // self<host> ).Str } }
+		my $who = {
+			'nick'  => ~($raw<user><nick> // ''),
+			'ident' => ~($raw<user><ident> // ''),
+			'host'  => ~($raw<user><host> // $raw<server> // ''),
+		};
+		$who does role { method Str { self<nick> // self<host> } }
 
 		my $event = Net::IRC::Event.new(
 			:raw($raw),
