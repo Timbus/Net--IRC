@@ -8,10 +8,22 @@ enum RequiredIntro is export <
 	BOTH
 >;
 
-enum CommandType is export <Short Long>;
-role Command { has $.abbreviate };
-multi trait_mod:<is>(Routine:D $m, :cmd(:$command)!) is export {
-	$m does Command(abbreviate => ($command !eqv Long));
+role Command[Str $command-name, Bool $abbreviate = True] {
+	has $.command-name = $command-name;
+	has $.abbreviate = $abbreviate;
+}
+
+multi trait_mod:<is>(Routine:D $m, :$cmd!) is export {
+	if $cmd !~~ Bool {
+		my $opts = $cmd.hash;
+		$m does Command[
+			( $opts<name>    // $m.name    ),
+			( $opts<abbreviate> !eqv False ),
+		];
+	}
+	else {
+		$m does Command[$m.name];
+	}
 }
 
 sub abbrev($name) { [\~] $name.comb }
@@ -21,9 +33,9 @@ role Net::IRC::CommandHandler {
 	has RequiredIntro $.required-intro is rw = EITHER;
 
 	has @!cmds       = self.^methods.grep(Command);
-	has %cmd-names   = @!cmds.map({ $^n.name => $^n });
+	has %cmd-names   = @!cmds.map({ $^n.command-name => $^n });
 	has %short-names = {}.push(
-		@!cmds.grep(*.abbreviate).map({ abbrev($^n.name) X=> $^n }).flat
+		@!cmds.grep(*.abbreviate).map({ abbrev($^n.command-name) X=> $^n }).flat
 	);
 
 	method recognized($handler: $ev) {

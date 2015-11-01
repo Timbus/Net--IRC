@@ -33,7 +33,7 @@ class Net::IRC::Modules::Seen does Net::IRC::CommandHandler {
 	}
 
 	#= Use 'seen <nick>' to see the latest activity seen for a given nick; you may specify more than one nick at a time, separated by spaces
-	method command_seen ( $ev, $/ ) {
+	method seen ( $ev, $/ ) is cmd {
 		my @params = ($<params> // '').comb(/\S+/);
 		if @params {
 			for @params -> $nick {
@@ -42,7 +42,7 @@ class Net::IRC::Modules::Seen does Net::IRC::CommandHandler {
 					my $stamp   = $dt.Str.subst('T', ' ');
 					my $seconds = now - $seen.when;
 					my $elapsed = friendly-duration($seconds);
-					
+
 					$ev.msg("$nick was last seen at $stamp ($elapsed ago) $seen.how() $seen.what()");
 				}
 				else {

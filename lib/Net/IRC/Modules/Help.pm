@@ -5,7 +5,7 @@ use Net::IRC::CommandHandler;
 class Net::IRC::Modules::Help does Net::IRC::CommandHandler {
 
 	#= Use 'help commands' for the command list, 'help <command>' to show help for that command, 'help modules' for the active module list, or 'help <module>' for info on that module
-	method command_help ( $ev, $match ) {
+	method help ( $ev, $match ) {
 		# Gather info about all modules and all commands
 		# XXXX: Cache this?
 		my @modules  = $ev.bot.modules;
@@ -14,18 +14,14 @@ class Net::IRC::Modules::Help does Net::IRC::CommandHandler {
 		for @modules -> $module {
 			next if $module.^name eq 'Net::IRC::Handlers::Default';
 			my $module-name	    = $module.^name.subst(/^'Net::IRC::Modules::'/, {''});
-			my @command-methods = $module.^methods.grep({ $_.name ~~ /^command_/});
-			my @command-names;
-			for @command-methods -> $method {
-				my $command-name = $method.name.subst(/^command_/, {''});
-				@command-names.push: $command-name;
-				%commands{$command-name}.push: $method;
-			}
+			my @command-methods = $module.^methods.grep(Command);
+
+			%commands = {}.push: @command-methods.map({$^method.command-name => $^method});
 
 			%modules{$module-name} := {
 				module	 => $module,
-				methods	 => @command-methods,
-				commands => @command-names,
+				methods	 => %commands.keys,
+				commands => %commands.values,
 			};
 		}
 

@@ -10,9 +10,9 @@ class Net::IRC::Modules::Tell does Net::IRC::CommandHandler {
 		has $.when;
 	}
 	has %messages;
-	
+
 	#= Use 'tell <nick> <message>' to save a message for delivery when that nick is active again
-	method command_tell ( $ev, $match ) {
+	method tell ( $ev, $match ) is cmd {
 		my $from = $ev.who;
 		if $match<params> ~~ /$<name>=<+ alpha + [ \[..\] \{..\} ]>+ <.punct>? <.ws> $<msg>=[.+]/ {
 			if $<name>.lc eq $from.lc|'me' {
@@ -29,20 +29,20 @@ class Net::IRC::Modules::Tell does Net::IRC::CommandHandler {
 			self.usage($ev, 'tell <nick> <message>');
 		}
 	}
-	
+
 	multi method said ( $ev where {$ev.who.lc ~~ %messages} ) {
 		self!deliver-message($ev)
 	}
-	
+
 	multi method joined ( $ev ) {#where {$ev.who.lc ~~ %messages} ) {
 		say 'okay I joined';
 		#self!deliver-message($ev)
 	}
-	
+
 	multi method nickchange ( $ev where {$ev.what.lc ~~ %messages} ) {
 		self!deliver-message($ev)
 	}
-	
+
 	method !deliver-message( $ev ){
 		my $reciever = $ev.who;
 		for @(%messages{$reciever.lc}) -> $msg {
