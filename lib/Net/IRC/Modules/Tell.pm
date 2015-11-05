@@ -35,7 +35,6 @@ class Net::IRC::Modules::Tell does Net::IRC::CommandHandler {
 	}
 
 	multi method joined ( $ev ) {#where {$ev.who.lc ~~ %messages} ) {
-		say 'okay I joined';
 		#self!deliver-message($ev)
 	}
 

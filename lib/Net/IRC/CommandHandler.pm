@@ -73,7 +73,6 @@ role Net::IRC::CommandHandler {
 		given %cmd-names{$name} // %short-names{$name} {
 			when Callable   { .(self, |@args) }
 			when Positional { warn "Cannot disambiguate '$name'. Possible commands: {$_>>.name.join(', ')}" }
-			default         { warn 'Nothing to dispatch!' }
 		}
 	}
 
