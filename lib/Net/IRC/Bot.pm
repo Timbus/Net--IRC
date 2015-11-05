@@ -62,19 +62,20 @@ class Net::IRC::Bot {
 				$line;
 			}
 		}
-		$.conn = IO::Socket::INET.new(host => $.server, port => $.port)
-			but irc-connection[$.debug];
+		return IO::Socket::Async.connect($.server, $.port).then: -> $promise {
+			$.conn = $promise.result but irc-connection[$.debug];
 
-		#Send PASS if needed
-		$.conn.sendln("PASS $.password", scrubbed => 'PASS ...')
-			if $.password;
+			#Send PASS if needed
+			$.conn.sendln("PASS $.password", scrubbed => 'PASS ...')
+				if $.password;
 
-		#Send NICK & USER.
-		#If the nick collides, we'll resend a new one when we recieve the error later.
-		#USER Parameters: 	<username> <hostname> <servername> <realname>
-		$.conn.sendln("NICK $.nick");
-		$.conn.sendln("USER $.username abc.xyz.net $.server :$.realname");
-		%.state<connected> = True;
+			#Send NICK & USER.
+			#If the nick collides, we'll resend a new one when we recieve the error later.
+			#USER Parameters: 	<username> <hostname> <servername> <realname>
+			$.conn.sendln("NICK $.nick");
+			$.conn.sendln("USER $.username abc.xyz.net $.server :$.realname");
+			%.state<connected> = True;
+		};
 	}
 
 	method !disconnect($quitmsg = "Leaving"){
@@ -84,21 +85,35 @@ class Net::IRC::Bot {
 		}
 	}
 
+	method connect-async() {
+		self!disconnect();
+
+		self!connect().then: -> $promise {
+			if $promise.status == Kept {
+				my $input-channel = $.conn.chars-supply.lines;
+
+				$input-channel.act: -> $line {
+						say $line;
+						my $event = Net::IRC::Parser::RawEvent.parse($line)
+							or $*ERR.say("Could not parse the following IRC event: $line.perl()") and next;
+
+						self!dispatch($event);
+					};
+
+				$input-channel;
+			}
+			else {
+				Failure.new('Failed to connect..');
+			}
+		};
+	}
 
 	method run() {
-		self!disconnect;
-		self!connect;
-		loop {
-			#XXX: Support for timed events?
-			my $line = $.conn.get
-				or die "Connection error.";
-			$line ~~ s/<[\n\r]>+$//;
+		# Wait to connect.
+		my $input-channel = await self.connect-async();
 
-			my $event = Net::IRC::Parser::RawEvent.parse($line)
-				or $*ERR.say("Could not parse the following IRC event: $line.perl()") and next;
-
-			self!dispatch($event);
-		}
+		# Wait for lines to stop coming.
+		$input-channel.wait;
 	}
 
 	method !dispatch($raw) {
