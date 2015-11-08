@@ -94,7 +94,6 @@ class Net::IRC::Bot {
 			my $input-channel = $.conn.chars-supply.lines;
 
 			$input-channel.act: sub ($line) {
-				say '>',$line;
 				my $event = Net::IRC::Parser::RawEvent.parse($line)
 					or $*ERR.say("Could not parse the following IRC event: $line.perl()");
 
