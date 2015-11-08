@@ -88,32 +88,29 @@ class Net::IRC::Bot {
 	method connect-async() {
 		self!disconnect();
 
-		self!connect().then: -> $promise {
-			if $promise.status == Kept {
-				my $input-channel = $.conn.chars-supply.lines;
+		self!connect().then: sub ($promise) {
+			fail('Failed to connect..') if $promise.status != Kept;
 
-				$input-channel.act: -> $line {
-						say $line;
-						my $event = Net::IRC::Parser::RawEvent.parse($line)
-							or $*ERR.say("Could not parse the following IRC event: $line.perl()") and next;
+			my $input-channel = $.conn.chars-supply.lines;
 
-						self!dispatch($event);
-					};
+			$input-channel.act: sub ($line) {
+				say '>',$line;
+				my $event = Net::IRC::Parser::RawEvent.parse($line)
+					or $*ERR.say("Could not parse the following IRC event: $line.perl()");
 
-				$input-channel;
-			}
-			else {
-				Failure.new('Failed to connect..');
-			}
+				self!dispatch($event) if $event;
+			};
+
+			$input-channel;
 		};
 	}
 
 	method run() {
 		# Wait to connect.
-		my $input-channel = await self.connect-async();
+		my $mainloop = await self.connect-async();
 
 		# Wait for lines to stop coming.
-		$input-channel.wait;
+		$mainloop.wait;
 	}
 
 	method !dispatch($raw) {
@@ -133,8 +130,8 @@ class Net::IRC::Bot {
 			:state(%.state),
 			:bot(self),
 			:who($who),
-			:where(~$raw<params>[0]),
-			:what(~$raw<params>[*-1]),
+			:where(~($raw<params>[0]//'')),
+			:what(~($raw<params>[*-1]//'')),
 		);
 
 
