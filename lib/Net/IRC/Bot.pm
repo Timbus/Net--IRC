@@ -3,6 +3,68 @@ use Net::IRC::Handlers::Default;
 use Net::IRC::Parser;
 use Net::IRC::Event;
 
+
+sub mylines(Supply:D $self, :$chomp = True ) {
+	use nqp;
+	on -> $res {
+		$self => do {
+			my str $str;
+			my int $chars;
+			my int $left;
+			my int $pos;
+			my int $nextpos;
+			my int $found;
+			my int $cr;
+			my int $crlf;
+
+			{
+				emit => -> \val {
+					$str   = $str ~ nqp::unbox_s(val);
+					$chars = nqp::chars($str);
+					$pos   = 0;
+
+					while ($left = $chars - $pos) > 0 {
+						$nextpos = nqp::findcclass(
+						  nqp::const::CCLASS_NEWLINE, $str, $pos, $left
+						);
+
+						# no trailing line delimiter, so go buffer
+						last unless nqp::iscclass(
+						  nqp::const::CCLASS_NEWLINE, $str, $nextpos
+						);
+
+						if $chomp {
+							$res.emit( ($found = $nextpos - $pos)
+							  ?? nqp::box_s(
+								   nqp::substr($str, $pos, $found), Str)
+							  !! ''
+							);
+							$pos = $nextpos + 1;
+						}
+						else {
+							$found = $nextpos - $pos + 1;
+							$res.emit( nqp::box_s(
+							  nqp::substr($str, $pos, $found), Str)
+							);
+							$pos = $pos + $found;
+						}
+					}
+					$str = $pos < $chars
+					  ?? nqp::substr($str,$pos)
+					  !! '';
+				},
+				done => {
+					if $str {
+						$chars = nqp::chars($str);
+						$res.emit( nqp::box_s($str, Str) );
+					}
+					$res.done;
+				}
+			}
+		}
+	}
+}
+
 class Net::IRC::Bot {
 	has $.conn is rw;
 
@@ -48,18 +110,14 @@ class Net::IRC::Bot {
 	}
 
 	method !connect(){
-		#Establish connection to server
-		self!reset-state;
+		self!disconnect();
+		self!reset-state();
+
 		say "Connecting to $.server on port $.port";
 		my role irc-connection[$debug] {
 			method sendln(Str $string, :$scrubbed = $string){
 				say "»»» $scrubbed" if $debug;
 				self.print($string~"\c13\c10");
-			}
-			method get(|){
-				my $line = callsame();
-				say "<-- $line" if $debug;
-				$line;
 			}
 		}
 		return IO::Socket::Async.connect($.server, $.port).then: -> $promise {
@@ -85,45 +143,46 @@ class Net::IRC::Bot {
 		}
 	}
 
-	method connect-async() {
-		self!disconnect();
+	method run(Bool :$async = False) {
+		# Connect, then attach the dispatcher to the line feed.
+		my $connected-promise = self!connect().then: -> $promise {
+			# Poke the promise to shake any failures out of it.
+			my $res = $promise.result;
 
-		self!connect().then: sub ($promise) {
-			fail('Failed to connect..') if $promise.status != Kept;
+			my $runloop-promise = Promise.new;
+			$.conn.chars-supply.&mylines.act:
+				-> $line { self!dispatch($line) },
+				done => { $runloop-promise.keep(1) };
 
-			my $input-channel = $.conn.chars-supply.lines;
-
-			$input-channel.act: sub ($line) {
-				my $event = Net::IRC::Parser::RawEvent.parse($line)
-					or $*ERR.say("Could not parse the following IRC event: $line.perl()");
-
-				self!dispatch($event) if $event;
-			};
-
-			$input-channel;
+			$runloop-promise;
 		};
+
+		if (!$async) {
+			# Wait to connect.
+			my $runloop = await $connected-promise;
+			await $runloop;
+		}
+
+		return $connected-promise;
 	}
 
-	method run() {
-		# Wait to connect.
-		my $mainloop = await self.connect-async();
+	method !dispatch($line) {
+		say "<-- $line" if $.debug;
 
-		# Wait for lines to stop coming.
-		$mainloop.wait;
-	}
+		my $raw = Net::IRC::Parser::RawEvent.parse($line)
+			or $*ERR.say("Could not parse the following IRC event: $line.perl()") and return;
 
-	method !dispatch($raw) {
 		#Make an event object and fill it as much as we can.
 		#XXX: Should I just use a single cached Event to save memory?
 		my $who = {
-			'nick'  => ~($raw<user><nick> // ''),
+			'nick'  => ~($raw<user><nick>  // ''),
 			'ident' => ~($raw<user><ident> // ''),
-			'host'  => ~($raw<user><host> // $raw<server> // ''),
+			'host'  => ~($raw<user><host>  // $raw<server> // ''),
 		};
 		$who does role { method Str { self<nick> // self<host> } }
 
 		my $event = Net::IRC::Event.new(
-			:raw($raw),
+			:$raw,
 			:command(~$raw<command>),
 			:conn($.conn),
 			:state(%.state),
