@@ -3,68 +3,6 @@ use Net::IRC::Handlers::Default;
 use Net::IRC::Parser;
 use Net::IRC::Event;
 
-
-sub mylines(Supply:D $self, :$chomp = True ) {
-	use nqp;
-	on -> $res {
-		$self => do {
-			my str $str;
-			my int $chars;
-			my int $left;
-			my int $pos;
-			my int $nextpos;
-			my int $found;
-			my int $cr;
-			my int $crlf;
-
-			{
-				emit => -> \val {
-					$str   = $str ~ nqp::unbox_s(val);
-					$chars = nqp::chars($str);
-					$pos   = 0;
-
-					while ($left = $chars - $pos) > 0 {
-						$nextpos = nqp::findcclass(
-						  nqp::const::CCLASS_NEWLINE, $str, $pos, $left
-						);
-
-						# no trailing line delimiter, so go buffer
-						last unless nqp::iscclass(
-						  nqp::const::CCLASS_NEWLINE, $str, $nextpos
-						);
-
-						if $chomp {
-							$res.emit( ($found = $nextpos - $pos)
-							  ?? nqp::box_s(
-								   nqp::substr($str, $pos, $found), Str)
-							  !! ''
-							);
-							$pos = $nextpos + 1;
-						}
-						else {
-							$found = $nextpos - $pos + 1;
-							$res.emit( nqp::box_s(
-							  nqp::substr($str, $pos, $found), Str)
-							);
-							$pos = $pos + $found;
-						}
-					}
-					$str = $pos < $chars
-					  ?? nqp::substr($str,$pos)
-					  !! '';
-				},
-				done => {
-					if $str {
-						$chars = nqp::chars($str);
-						$res.emit( nqp::box_s($str, Str) );
-					}
-					$res.done;
-				}
-			}
-		}
-	}
-}
-
 class Net::IRC::Bot {
 	has $.conn is rw;
 
@@ -113,7 +51,7 @@ class Net::IRC::Bot {
 		self!disconnect();
 		self!reset-state();
 
-		say "Connecting to $.server on port $.port";
+		say "Connecting to $.server on port $.port" if $.debug;
 		my role irc-connection[$debug] {
 			method sendln(Str $string, :$scrubbed = $string){
 				say "»»» $scrubbed" if $debug;
@@ -150,7 +88,7 @@ class Net::IRC::Bot {
 			my $res = $promise.result;
 
 			my $runloop-promise = Promise.new;
-			$.conn.chars-supply.&mylines.act:
+			$.conn.chars-supply.lines.act:
 				-> $line { self!dispatch($line) },
 				done => { $runloop-promise.keep(1) };
 
@@ -194,7 +132,7 @@ class Net::IRC::Bot {
 
 
 		# Dispatch to the raw event handlers.
-		@.modules>>.*"irc_{ lc $event.command }"($event);
+		@.modules>>.*"irc_{ lc $event.command }"($event);  #"
 		given uc $event.command {
 			when "PRIVMSG" {
 				#Check to see if its a CTCP request.
