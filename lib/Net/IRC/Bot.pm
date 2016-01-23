@@ -88,7 +88,7 @@ class Net::IRC::Bot {
 			my $res = $promise.result;
 
 			my $runloop-promise = Promise.new;
-			$.conn.chars-supply.lines.act:
+			$.conn.Supply.lines.act:
 				-> $line { self!dispatch($line) },
 				done => { $runloop-promise.keep(1) };
 
