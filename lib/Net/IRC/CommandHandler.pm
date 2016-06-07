@@ -32,7 +32,7 @@ role Net::IRC::CommandHandler {
 	has Str $.prefix is rw = '!';
 	has RequiredIntro $.required-intro is rw = EITHER;
 
-	has @!cmds       = self.^methods.grep(Command);
+	has @!cmds       = self.^methods>>.candidates.flat.grep(Command);
 	has %cmd-names   = @!cmds.map({ $^n.command-name => $^n });
 	has %short-names = {}.push(
 		@!cmds.grep(*.abbreviate).map({ abbrev($^n.command-name) X=> $^n }).flat

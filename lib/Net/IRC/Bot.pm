@@ -189,11 +189,10 @@ class Net::IRC::Bot {
 	method do_dispatch($method, $event) {
 		for @.modules -> $mod {
 			if $mod.^find_method($method) -> $multi {
-				$multi.cando(Capture.new(list => [$mod, $event]))>>.($mod, $event);
+				$multi.cando( \($mod, $event) )>>.($mod, $event);
 			}
 		}
 	}
 }
 
 # vim: ft=perl6 tabstop=4 shiftwidth=4
-
