@@ -33,7 +33,7 @@ role Net::IRC::CommandHandler {
 	has RequiredIntro $.required-intro is rw = EITHER;
 
 	has @!cmds       = self.^methods>>.candidates.flat.grep(Command);
-	has %cmd-names   = @!cmds.map({ $^n.command-name => $^n });
+	has %cmd-names   = {}.push( @!cmds.map({ $^n.command-name => $^n }) );
 	has %short-names = {}.push(
 		@!cmds.grep(*.abbreviate).map({ abbrev($^n.command-name) X=> $^n }).flat
 	);
@@ -70,10 +70,15 @@ role Net::IRC::CommandHandler {
 	}
 
 	method !dispatch($name, *@args) {
-		given %cmd-names{$name} // %short-names{$name} {
-			when Callable   { .(self, |@args) }
-			when Positional { warn "Cannot disambiguate '$name'. Possible commands: {$_>>.name.join(', ')}" }
+		with %cmd-names{$name} -> $candidates {
+			# Handle all exact matches.
+			$candidates>>.(self, |@args)
 		}
+		orwith %short-names{$name} -> $candidates {
+			# Only handle non-ambiguous abbreviations, though.
+			$candidates.(self, |@args) if $candidates.elems == 1
+		}
+
 	}
 
 	method usage($ev, $usage) {
